@@ -3,9 +3,10 @@
             [edge-algebra.edge :refer [make-edge]]))
 
 
-;; An EdgeRecord represents eight QuadEdges:
-;; the four oriented and directed versions of an undirected edge and of its dual.
-;; One of them, called e0, is selected as the canonical representative of the group.
+;; An EdgeRecord represents eight edges:
+;; the four oriented and directed versions of an undirected edge and of its dual;
+;; and the eight nodes that represent the vertices of the edge and of its dual.
+;; The duals of vertices of an edge are faces incident to the edge's dual.
 
 
 (defn make-edge-record
@@ -38,9 +39,11 @@
         er {:nodes nodes :edges edges}]
 
     (doseq [orientation [0 1]]
-      (doseq [rotation [0 1 2 3]]
-        (.setEdgeRecord (get-in nodes [rotation orientation]) er))
 
+      (doseq [rotation [0 1 2 3]]
+        ;; back-pointers oh well:
+        (.setEdgeRecord (get-in nodes [rotation orientation]) er)
+        (.setEdgeRecord (get-in edges [rotation orientation]) er))
 
       (let [e0o (get-in edges [0 orientation])
             e1o (get-in edges [1 orientation])
@@ -49,12 +52,7 @@
         (.setNextRef e0o e0o)
         (.setNextRef e1o e3o)
         (.setNextRef e2o e2o)
-        (.setNextRef e3o e1o)
-
-        (.setEdgeRecord e0o er)
-        (.setEdgeRecord e1o er)
-        (.setEdgeRecord e2o er)
-        (.setEdgeRecord e3o er)))
+        (.setNextRef e3o e1o)))
 
     er))
 

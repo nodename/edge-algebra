@@ -6,7 +6,7 @@
   ;; TODO make a subdivision
   []
   (let [er (make-edge-record)]
-    (get-in er [:edges 0 0])))
+    (get-edge er 0 0)))
 
 
 ;; the fully qualified types:
@@ -22,7 +22,7 @@
 
 
 (defmulti dual
-  "The dual of an edge or a Node is its counterpart in the dual subdivision."
+  "The dual of an Edge or a Node is its counterpart in the dual subdivision."
   class)
 
 
@@ -34,13 +34,18 @@
   [node]
   (let [an-edge (get-edge (.getEdgeRecord node) 0 0)
         node-relationship-to-edge (mod (- (.-r node) (.-r an-edge)) 4)
-        dual-edge (dual an-edge)]
-      (condp = node-relationship-to-edge
-        RIGHT-FACE (if (zero? (.-f node))
-                     (dest-vertex dual-edge)
-                     (origin-vertex dual-edge))
-        DEST-VERTEX (right-face dual-edge)
-        LEFT-FACE (if (zero? (.-f node))
-                    (origin-vertex dual-edge)
-                    (dest-vertex dual-edge))
-        ORIGIN-VERTEX (left-face dual-edge))))
+        dual-edge (dual an-edge)
+        dual-node-relationship-to-dual-edge (condp = node-relationship-to-edge
+                                              RIGHT-FACE (if (zero? (.-f node))
+                                                            dest-vertex
+                                                            origin-vertex)
+
+                                              DEST-VERTEX right-face
+
+                                              LEFT-FACE (if (zero? (.-f node))
+                                                          origin-vertex
+                                                          dest-vertex)
+
+                                              ORIGIN-VERTEX left-face)]
+
+    (dual-node-relationship-to-dual-edge dual-edge)))
