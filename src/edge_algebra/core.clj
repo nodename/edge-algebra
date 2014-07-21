@@ -1,6 +1,9 @@
 (ns edge-algebra.core
   (:require [edge-algebra.edge-record :refer [make-edge-record]]
-            [edge-algebra.edge :refer [rot flip origin-vertex dest-vertex left-face right-face get-edge]]))
+            [edge-algebra.edge :refer [rot flip
+                                       origin-vertex dest-vertex
+                                       left-face right-face
+                                       get-edge]]))
 
 (defn new-edge
   ;; TODO make a subdivision

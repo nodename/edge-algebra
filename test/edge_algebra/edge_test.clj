@@ -1,7 +1,9 @@
 (ns edge-algebra.edge-test
   (:require [clojure.test :refer :all]
             [edge-algebra.core :refer [new-edge dual]]
-            [edge-algebra.edge :refer :all]
+            [edge-algebra.edge :refer [sym flip rot
+                                       l-next r-next o-next d-next
+                                       origin-vertex left-face]]
             [edge-algebra.node :refer [equal?]]))
 
 ;; These tests must pass for any edge at any time,
