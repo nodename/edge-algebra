@@ -20,7 +20,7 @@
     this))
 
 
-(defn make-node
+(defn make-node!
   [r f & {:keys [clone-of]
           :or {clone-of nil}}]
   (->Node

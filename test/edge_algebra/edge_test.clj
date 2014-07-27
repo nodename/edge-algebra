@@ -1,6 +1,7 @@
 (ns edge-algebra.edge-test
   (:require [clojure.test :refer :all]
-            [edge-algebra.core :refer [new-edge dual]]
+            [edge-algebra.core :refer [new-edge!]]
+            [edge-algebra.dual :refer [dual]]
             [edge-algebra.edge :refer [sym flip rot
                                        l-next r-next o-next d-next
                                        origin-vertex left-face]]
@@ -13,7 +14,7 @@
 
 (defn wrap-edge-creation
   [test-fn]
-  (let [new-edge (new-edge)]
+  (let [new-edge (new-edge!)]
     (binding [*edge* new-edge]
       (test-fn))))
 

@@ -9,12 +9,15 @@
   (getNextRef [])
   (setNextRef [e])
   (getEdgeRecord [])
-  (setEdgeRecord [er]))
+  (setEdgeRecord [er])
+  (getData [])
+  (setData [data]))
 
 (deftype Edge [r ; rotation
                f ; flip or orientation
                ^:volatile-mutable o-next-ref
-               ^:volatile-mutable edge-record] ;; the containing edge-record, which holds eight Edges
+               ^:volatile-mutable edge-record ; the containing edge-record, which holds eight Edges
+               ^:volatile-mutable data]
   IEdge
   (getNextRef [this]
    o-next-ref)
@@ -31,9 +34,9 @@
     this))
 
 
-(defn make-edge
+(defn make-edge!
   [r f]
-  (->Edge r f nil nil))
+  (->Edge r f nil nil nil))
 
 
 (defn get-edge
@@ -159,59 +162,36 @@
     [op exponent]))
 
 
-(defn get-op
-  [link direction exponent]
+(defn neighbor
+  [edge link direction exponent]
   (let [exponent (if (nil? exponent) 1 exponent)
         [op exponent] (rectify link direction exponent)]
-    (fn [edge]
-      (nth (iterate op edge) exponent))))
+    (nth (iterate op edge) exponent)))
+
 
 
 (defn o-next [edge & [exponent]]
-  (let [op (get-op :origin :pos exponent)]
-    (op edge)))
+  (neighbor edge :origin :pos exponent))
 
 (defn o-prev [edge & [exponent]]
-  (let [op (get-op :origin :neg exponent)]
-    (op edge)))
+  (neighbor edge :origin :neg exponent))
 
 (defn d-next [edge & [exponent]]
-  (let [op (get-op :dest :pos exponent)]
-    (op edge)))
+  (neighbor edge :dest :pos exponent))
 
 (defn d-prev [edge & [exponent]]
-  (let [op (get-op :dest :neg exponent)]
-    (op edge)))
+  (neighbor edge :dest :neg exponent))
 
 (defn l-next [edge & [exponent]]
-  (let [op (get-op :left :pos exponent)]
-    (op edge)))
+  (neighbor edge :left :pos exponent))
 
 (defn l-prev [edge & [exponent]]
-  (let [op (get-op :left :neg exponent)]
-    (op edge)))
+  (neighbor edge :left :neg exponent))
 
 (defn r-next [edge & [exponent]]
-  (let [op (get-op :right :pos exponent)]
-    (op edge)))
+  (neighbor edge :right :pos exponent))
 
 (defn r-prev [edge & [exponent]]
-  (let [op (get-op :right :neg exponent)]
-    (op edge)))
+  (neighbor edge :right :neg exponent))
 
-
-;; This is where the magic happens:
-
-(defn splice!
-  [edge0 edge1]
-  (let [edge0-next (o-next edge0)
-        edge1-next (o-next edge1)
-        alpha (rot edge0-next)
-        beta (rot edge1-next)
-        alpha-next (o-next alpha)
-        beta-next (o-next beta)]
-    (.setNextRef edge0 edge1-next)
-    (.setNextRef edge1 edge0-next)
-    (.setNextRef alpha beta-next)
-    (.setNextRef beta alpha-next)))
 
