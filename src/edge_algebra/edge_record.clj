@@ -1,6 +1,6 @@
 (ns edge-algebra.edge-record
-  (:require [edge-algebra.node :refer [make-node!]]
-            [edge-algebra.edge :refer [make-edge!]]))
+  (:require [edge-algebra.node :refer [new-node!]]
+            [edge-algebra.edge :refer [new-edge!]]))
 
 
 ;; An EdgeRecord represents eight edges:
@@ -9,32 +9,32 @@
 ;; The duals of vertices of an edge are faces incident to the edge's dual.
 
 
-(defn make-edge-record!
+(defn new-edge-record!
   []
-  (let [n00 (make-node! 0 0)
-        n01 (make-node! 0 1)
+  (let [n00 (new-node! 0 0)
+        n01 (new-node! 0 1)
         nodes [
                [
                 n00
                 n01
                 ]
                [
-                (make-node! 1 0)
-                (make-node! 1 1)
+                (new-node! 1 0)
+                (new-node! 1 1)
                 ]
                [
-                (make-node! 2 0 :clone-of n00)
-                (make-node! 2 1 :clone-of n01)
+                (new-node! 2 0 :clone-of n00)
+                (new-node! 2 1 :clone-of n01)
                 ]
                [
-                (make-node! 3 0)
-                (make-node! 3 1)
+                (new-node! 3 0)
+                (new-node! 3 1)
                 ]
                ]
 
         edges (vec (for [r (range 0 4)]
                      (vec (for [f (range 0 2)]
-                            (make-edge! r f)))))
+                            (new-edge! r f)))))
 
         er {:nodes nodes :edges edges}]
 
@@ -49,19 +49,12 @@
             e1o (get-in edges [1 orientation])
             e2o (get-in edges [2 orientation])
             e3o (get-in edges [3 orientation])]
-        (.setNextRef e0o e0o)
-        (.setNextRef e1o e3o)
-        (.setNextRef e2o e2o)
-        (.setNextRef e3o e1o)))
+        (.setNext e0o e0o)
+        (.setNext e1o e3o)
+        (.setNext e2o e2o)
+        (.setNext e3o e1o)))
 
     er))
-
-
-
-
-
-
-
 
 
 

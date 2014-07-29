@@ -9,8 +9,9 @@
 
 (deftype Node [r ; rotation
                f ; flip or orientation
-               unique-node
-               ^:volatile-mutable edge-record] ;; the containing edge-record, which holds eight Edges
+               unique-id
+               ^:volatile-mutable edge-record ;; the containing edge-record
+               ]
   INode
   (getEdgeRecord [this]
     edge-record)
@@ -20,7 +21,7 @@
     this))
 
 
-(defn make-node!
+(defn new-node!
   [r f & {:keys [clone-of]
           :or {clone-of nil}}]
   (->Node
@@ -28,16 +29,12 @@
    f
    (if (nil? clone-of)
      (gensym)
-     (.-unique-node clone-of))
+     (.-unique-id clone-of))
    nil))
 
 
 (defn equal?
   "Are they the same node?"
   [node0 node1]
-  (= (.-unique-node node0) (.-unique-node node1)))
+  (= (.-unique-id node0) (.-unique-id node1)))
 
-
-(defn get-node
-  [edge-record rotation f]
-  (get-in edge-record [:nodes (mod rotation 4) (mod f 2)]))

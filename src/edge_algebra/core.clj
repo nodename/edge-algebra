@@ -1,15 +1,14 @@
 (ns edge-algebra.core
-  (:require [edge-algebra.edge-record :refer [make-edge-record!]]
-            [edge-algebra.edge :refer [o-next rot get-edge]]))
+  (:require [edge-algebra.edge-record :refer [new-edge-record!]]
+            [edge-algebra.record :refer [get-e0]]
+            [edge-algebra.edge :refer [o-next rot]]))
 
 
-(defn new-edge!
+(defn make-edge!
   ;; TODO make a subdivision
   []
-  (let [er (make-edge-record!)]
-    (get-edge er 0 0)))
+  (get-e0 (new-edge-record!)))
 
-;; This is where the magic happens:
 
 (defn splice!
   [edge0 edge1]
@@ -19,10 +18,10 @@
         beta (rot edge1-next)
         alpha-next (o-next alpha)
         beta-next (o-next beta)]
-    (.setNextRef edge0 edge1-next)
-    (.setNextRef edge1 edge0-next)
-    (.setNextRef alpha beta-next)
-    (.setNextRef beta alpha-next)))
+    (.setNext edge0 edge1-next)
+    (.setNext edge1 edge0-next)
+    (.setNext alpha beta-next)
+    (.setNext beta alpha-next)))
 
 
 

@@ -1,6 +1,6 @@
 (ns edge-algebra.new-edge-test
   (:require [clojure.test :refer :all]
-            [edge-algebra.core :refer [new-edge!]]
+            [edge-algebra.core :refer [make-edge!]]
             [edge-algebra.edge :refer :all]
             [edge-algebra.node :refer [equal?]]))
 
@@ -11,7 +11,7 @@
 
 (defn wrap-edge-creation
   [test-fn]
-  (let [new-edge (new-edge!)
+  (let [new-edge (make-edge!)
         new-edge-rot (rot new-edge)]
     (binding [*new-edge* new-edge
               *new-edge-rot* new-edge-rot]

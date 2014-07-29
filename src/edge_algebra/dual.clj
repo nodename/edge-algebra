@@ -1,8 +1,8 @@
 (ns edge-algebra.dual
-  (:require [edge-algebra.edge :refer [rot flip
+  (:require [edge-algebra.record :refer [get-e0]]
+            [edge-algebra.edge :refer [rot flip
                                        origin-vertex dest-vertex
-                                       left-face right-face
-                                       get-edge]]))
+                                       left-face right-face]]))
 
 ;; the fully qualified types:
 (def Edge edge_algebra.edge.Edge)
@@ -35,10 +35,10 @@
 
 (defmethod dual Node
   [node]
-  (let [an-edge (get-edge (.getEdgeRecord node) 0 0)
-        node-relationship-to-edge (node-role node an-edge)
-        dual-edge (dual an-edge)
-        dual-node-relationship-to-dual-edge (condp = node-relationship-to-edge
+  (let [e0 (get-e0 (.getEdgeRecord node))
+        node-relationship-to-e0 (node-role node e0)
+        dual-edge (dual e0)
+        dual-node-relationship-to-dual-edge (condp = node-relationship-to-e0
                                               :right-face (if (zero? (.-f node))
                                                             dest-vertex
                                                             origin-vertex)

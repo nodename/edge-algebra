@@ -1,13 +1,13 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.node :refer [get-node]]))
+  (:require [edge-algebra.record :refer [get-node get-edge]]))
 
 
-;; Edges need a mutable o-next-ref field so we make it a type with a volatile field.
+;; Edges need a mutable o-next field so we make it a type with a volatile field.
 ;; http://macromancy.com/2014/01/16/data-structures-clojure-singly-linked-list.html
 
 (definterface IEdge
-  (getNextRef [])
-  (setNextRef [e])
+  (getNext [])
+  (setNext [e])
   (getEdgeRecord [])
   (setEdgeRecord [er])
   (getData [])
@@ -15,33 +15,38 @@
 
 (deftype Edge [r ; rotation
                f ; flip or orientation
-               ^:volatile-mutable o-next-ref
-               ^:volatile-mutable edge-record ; the containing edge-record, which holds eight Edges
+               ^:volatile-mutable o-next
+               ^:volatile-mutable edge-record ; the containing edge-record
                ^:volatile-mutable data]
   IEdge
-  (getNextRef [this]
-   o-next-ref)
+  (getNext [this]
+           o-next)
 
-  (setNextRef [this e]
-   (set! o-next-ref e)
-   this)
+  (setNext [this e]
+           (set! o-next e)
+           this)
 
   (getEdgeRecord [this]
-    edge-record)
+                 edge-record)
 
   (setEdgeRecord [this er]
-    (set! edge-record er)
-    this))
+                 (set! edge-record er)
+                 this)
+
+  (getData [this]
+           data)
+
+  (setData [this d]
+           (set! data d)
+           this))
 
 
-(defn make-edge!
+
+
+(defn new-edge!
   [r f]
   (->Edge r f nil nil nil))
 
-
-(defn get-edge
-  [edge-record rotation f]
-  (get-in edge-record [:edges (mod rotation 4) (mod f 2)]))
 
 
 ;; The four nodes directly connected to this edge
@@ -75,24 +80,24 @@
 ;; get the three related edges within the same edge-record: rot, sym, and flip
 
 (defn rot
-  ([edge] (rot edge 1))
-  ([edge exponent]
+  ([edge] (rot 1 edge))
+  ([exponent edge]
    (let [r (.r edge)
          f (.f edge)]
      (get-edge (.getEdgeRecord edge) (+ r (* (+ 1 (* 2 f)) exponent)) f))))
 
 (defn sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
-  ([edge] (sym edge 1))
-  ([edge exponent]
+  ([edge] (sym 1 edge))
+  ([exponent edge]
    (let [r (.r edge)
          f (.f edge)]
      (get-edge (.getEdgeRecord edge) (+ r (* 2 exponent)) f))))
 
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
-  ([edge] (flip edge 1))
-  ([edge exponent]
+  ([edge] (flip 1 edge))
+  ([exponent edge]
    (let [r (.r edge)
          f (.f edge)]
      (get-edge (.getEdgeRecord edge) r (+ f exponent)))))
@@ -104,11 +109,11 @@
 ;; that find the next and prev edges through
 ;; each of the four rings in which this edge participates.
 ;; Note that they all access a single property of
-;; the Edge type, o-next-ref:
+;; the Edge type, .getNext:
 
 ;; find the QuadEdge immediately following this one
 ;; counterclockwise in the ring of edges out of originVertex:
-(defn onext [edge] (.getNextRef edge))
+(defn onext [edge] (.getNext edge))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:
@@ -120,16 +125,16 @@
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges into destVertex:
-(def dprev (comp #(rot % -1) onext #(rot % -1)))
+(def dprev (comp #(rot -1 %) onext #(rot -1 %)))
 
 ;; find the next counterclockwise QuadEdge with the same left face:
-(def lnext (comp rot onext #(rot % -1)))
+(def lnext (comp rot onext #(rot -1 %)))
 
 ;; find the next clockwise QuadEdge with the same left face:
 (def lprev (comp sym onext))
 
 ;; find the next clockwise QuadEdge with the same right face:
-(def rnext (comp #(rot % -1) onext rot))
+(def rnext (comp #(rot -1 %) onext rot))
 
 ;; find the next clockwise QuadEdge with the same right face:
 (def rprev (comp onext sym))
@@ -138,17 +143,14 @@
 ;; that allow an exponent indicating how many steps (positive or negative)
 ;; to traverse the respective rings:
 
-(defn invert
-  [direction]
-  (condp = direction
-    :pos :neg
-    :neg :pos))
+(def invert {:next :prev
+             :prev :next})
 
 (def ops
-  {:origin {:pos onext :neg oprev}
-   :dest {:pos dnext :neg dprev}
-   :left {:pos lnext :neg lprev}
-   :right {:pos rnext :neg rprev}})
+  {:origin {:next onext :prev oprev}
+   :dest   {:next dnext :prev dprev}
+   :left   {:next lnext :prev lprev}
+   :right  {:next rnext :prev rprev}})
 
 
 (defn rectify
@@ -164,34 +166,40 @@
 
 (defn neighbor
   [edge link direction exponent]
-  (let [exponent (if (nil? exponent) 1 exponent)
-        [op exponent] (rectify link direction exponent)]
+  (let [[op exponent] (rectify link direction exponent)]
     (nth (iterate op edge) exponent)))
 
 
+(defn o-next
+  ([edge] (o-next 1 edge))
+  ([exponent edge] (neighbor edge :origin :next exponent)))
 
-(defn o-next [edge & [exponent]]
-  (neighbor edge :origin :pos exponent))
+(defn o-prev
+  ([edge] (o-prev 1 edge))
+  ([exponent edge] (neighbor edge :origin :prev exponent)))
 
-(defn o-prev [edge & [exponent]]
-  (neighbor edge :origin :neg exponent))
+(defn d-next
+  ([edge] (d-next 1 edge))
+  ([exponent edge] (neighbor edge :dest :next exponent)))
 
-(defn d-next [edge & [exponent]]
-  (neighbor edge :dest :pos exponent))
+(defn d-prev
+  ([edge] (d-prev 1 edge))
+  ([exponent edge] (neighbor edge :dest :prev exponent)))
 
-(defn d-prev [edge & [exponent]]
-  (neighbor edge :dest :neg exponent))
+(defn l-next
+  ([edge] (l-next 1 edge))
+  ([exponent edge] (neighbor edge :left :next exponent)))
 
-(defn l-next [edge & [exponent]]
-  (neighbor edge :left :pos exponent))
+(defn l-prev
+  ([edge] (l-prev 1 edge))
+  ([exponent edge] (neighbor edge :left :prev exponent)))
 
-(defn l-prev [edge & [exponent]]
-  (neighbor edge :left :neg exponent))
+(defn r-next
+  ([edge] (r-next 1 edge))
+  ([exponent edge] (neighbor edge :right :next exponent)))
 
-(defn r-next [edge & [exponent]]
-  (neighbor edge :right :pos exponent))
-
-(defn r-prev [edge & [exponent]]
-  (neighbor edge :right :neg exponent))
+(defn r-prev
+  ([edge] (r-prev 1 edge))
+  ([exponent edge] (neighbor edge :right :prev exponent)))
 
 

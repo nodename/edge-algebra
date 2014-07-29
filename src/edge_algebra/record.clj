@@ -1,0 +1,22 @@
+(ns edge-algebra.record)
+
+
+(defn- get-elt
+  [edge-record type r f]
+  (get-in edge-record [type (mod r 4) (mod f 2)]))
+
+
+(defn get-node
+  [edge-record rotation f]
+  (get-elt edge-record :nodes rotation f))
+
+
+(defn get-edge
+  [edge-record rotation f]
+  (get-elt edge-record :edges rotation f))
+
+
+(defn get-e0
+  "Return the canonical representative edge of an edge record"
+  [edge-record]
+  (get-edge edge-record 0 0))
