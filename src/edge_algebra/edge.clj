@@ -42,7 +42,6 @@
 
 
 
-
 (defn new-edge!
   [r f]
   (->Edge r f nil nil nil))
@@ -52,7 +51,7 @@
 ;; The four nodes directly connected to this edge
 ;; represent its direction and orientation:
 
-;; direction: origin-vertex and dest-vertex
+;; ## Direction: origin-vertex and dest-vertex
 
 (defn origin-vertex
   [edge]
@@ -62,18 +61,18 @@
   [edge]
   (get-node (.getEdgeRecord edge) (+ (.r edge) 1) (.f edge)))
 
-;; orientation: left-face and right-face
+;; ## Orientation: left-face and right-face
 
 (defn left-face
   [edge]
-  (let [r (.r edge)
-        f (.f edge)]
+  (let [r (.-r edge)
+        f (.-f edge)]
     (get-node (.getEdgeRecord edge) (+ (+ r 2) (* 2 f)) f)))
 
 (defn right-face
   [edge]
-  (let [r (.r edge)
-        f (.f edge)]
+  (let [r (.-r edge)
+        f (.-f edge)]
     (get-node (.getEdgeRecord edge) (+ r (* 2 f)) f)))
 
 
@@ -82,24 +81,24 @@
 (defn rot
   ([edge] (rot 1 edge))
   ([exponent edge]
-   (let [r (.r edge)
-         f (.f edge)]
+   (let [r (.-r edge)
+         f (.-f edge)]
      (get-edge (.getEdgeRecord edge) (+ r (* (+ 1 (* 2 f)) exponent)) f))))
 
 (defn sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
   ([edge] (sym 1 edge))
   ([exponent edge]
-   (let [r (.r edge)
-         f (.f edge)]
+   (let [r (.-r edge)
+         f (.-f edge)]
      (get-edge (.getEdgeRecord edge) (+ r (* 2 exponent)) f))))
 
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
   ([edge] (flip 1 edge))
   ([exponent edge]
-   (let [r (.r edge)
-         f (.f edge)]
+   (let [r (.-r edge)
+         f (.-f edge)]
      (get-edge (.getEdgeRecord edge) r (+ f exponent)))))
 
 

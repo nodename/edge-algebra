@@ -1,11 +1,26 @@
+;; ## A data structure for generalized diagrams
+;;
+;; "Generalized diagrams -- that is, embeddings of graphs in two-dimensional
+;; manifolds. This structure represents simultaneously an embedding, its dual,
+;; and its mirror image. Furthermore, just two operators are sufficient
+;; for building and modifying arbitrary diagrams."
+;;
+;; ## Some Topology
+;;
+;; "In mathematics, the closure of a subset S in a topological space
+;; consists of all points in S plus the limit points of S. The closure of S
+;; is also defined as the union of S and its boundary." -- Wikipedia
+;;
+;; Homeomorphisms are the isomorphisms in the category of topological spaces.
+;;
 (ns edge-algebra.core
   (:require [edge-algebra.edge-record :refer [new-edge-record!]]
             [edge-algebra.record :refer [get-e0]]
             [edge-algebra.edge :refer [o-next rot]]))
 
+;; ## The Two Operators Exported by the Library
 
 (defn make-edge!
-  ;; TODO make a subdivision
   []
   (get-e0 (new-edge-record!)))
 

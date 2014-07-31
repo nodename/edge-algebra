@@ -5,11 +5,14 @@
    ;; some neighboring-edge properties:
    [edge-algebra.edge :refer [sym l-next o-prev]]
 
-   ;; geometric support from toxi's geom library:
+   ;; geometry support from toxi's geom library:
+   [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
-   [thi.ng.geom.core.utils :refer [clockwise2?]])
+   [thi.ng.geom.core.utils :refer [norm-sign2]])
 
   (:refer-clojure :exclude [swap!]))
+
+(def pt vec2)
 
 
 ;; For the Delaunay application, the data field of an Edge will contain the coordinates of its origin.
@@ -34,7 +37,7 @@
 
 
 (defn connect!
-  [a b side] ;; side?;
+  [a b]
   (let [e (make-edge!)]
     (set-org! e (dest a))
     (set-dest! e (org b))
@@ -79,7 +82,7 @@
 (defn ccw
   "The predicate ccw is true if the points a, b, and c form a counterclockwise-oriented triangle."
   [a b c]
-  (not (clockwise2? a b c)))
+  (pos? (norm-sign2 a b c)))
 
 (defn right-of
   [point edge]
@@ -89,15 +92,37 @@
   [point edge]
   (ccw point (org edge) (dest edge)))
 
+(defn sort-xy
+  "Sort by x, and when xs are equal, sort by y"
+  [seq]
+  (sort-by (juxt #(.-x %) #(.-y %)) seq))
+
 (defn delaunay
   [sites]
   (condp = (count sites)
     1 nil
-    2 (let [a (new-edge!)]
+    2 (let [a (make-edge!)]
         (set-org! a (sites 0))
         (set-dest! a (sites 1))
         [a (.sym a)])
-    3 (let [[a b c] (sort sites)])
+    3 (let [[s1 s2 s3] (sort-xy sites)
+            ;; create edges a connecting s1 to s2 and b connecting s2 to s3:
+            a (make-edge!)
+            b (make-edge!)]
+        (splice! (sym a) b)
+        (set-org! a s1)
+        (set-dest! a s2)
+        (set-org! b s2)
+        (set-dest! b s3)
+        ;; now close the triangle:
+        (cond
+         (ccw s1 s2 s3) (do
+                          (connect! b a)
+                          [a (sym b)])
+         (ccw s1 s3 s2) (let [c (connect! b a)]
+                         [(sym c) c])
+         ;; otherwise the three points are collinear:
+         :else [a (sym b)]))
     ))
 
 
