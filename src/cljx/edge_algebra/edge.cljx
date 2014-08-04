@@ -1,5 +1,5 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.record :refer [get-node get-edge]]))
+  (:require [edge-algebra.record :refer [IType get-node get-edge]]))
 
 
 ;; Edges need a mutable next field so we make it a type with a volatile field.
@@ -45,6 +45,10 @@
   (setData [this d]
            (set! data d)
            this)
+
+  IType
+  (getType [this]
+            :edge)
 
   Object
   (toString [this]

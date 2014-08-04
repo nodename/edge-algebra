@@ -1,5 +1,7 @@
 (ns edge-algebra.record)
 
+(defprotocol IType
+  (getType [this]))
 
 (defn- get-elt
   [edge-record type r f]

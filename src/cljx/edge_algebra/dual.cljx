@@ -26,14 +26,14 @@
 
 (defmulti dual
   "The dual of an Edge or a Node is its counterpart in the dual subdivision."
-  class)
+  #(.getType %))
 
 
-(defmethod dual Edge
+(defmethod dual :edge
   [edge]
   (rot (flip edge)))
 
-(defmethod dual Node
+(defmethod dual :node
   [node]
   (let [e0 (get-e0 (.getEdgeRecord node))
         node-relationship-to-e0 (node-role node e0)

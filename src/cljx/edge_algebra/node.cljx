@@ -1,4 +1,5 @@
-(ns edge-algebra.node)
+(ns edge-algebra.node
+  (:require [edge-algebra.record :refer [IType]]))
 
 ;; A Node represents either a vertex or a face of the graph
 
@@ -19,7 +20,11 @@
 
   (setEdgeRecord [this er]
     (set! edge-record er)
-    this))
+    this)
+
+  IType
+  (getType [this]
+            :node))
 
 
 (defn new-node!
