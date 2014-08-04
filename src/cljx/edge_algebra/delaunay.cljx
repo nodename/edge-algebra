@@ -4,7 +4,7 @@
    [edge-algebra.core :refer [make-edge! splice!]]
    ;; some neighboring-edge properties:
    [edge-algebra.edge :refer [sym l-next o-next o-prev r-prev]]
-
+   ;;
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
@@ -102,7 +102,7 @@
   [seq]
   (let [half (/ (count seq) 2)
         sorted-seq (sort-xy seq)]
-    (split-at half sorted-seq)))
+    (map vec (split-at half sorted-seq))))
 
 
 (defn slide-left!
@@ -125,7 +125,7 @@
 (defn bubble-left!
   [basel]
   (let [lcand (o-next (sym basel))]
-    (when (valid? lcand)
+    (when (valid? lcand basel)
       (loop [x lcand]
         (if (in-circle? (dest basel) (org basel) (dest lcand) (dest (o-next lcand)))
           (recur (slide-left! x))
@@ -134,7 +134,7 @@
 (defn bubble-right!
   [basel]
   (let [rcand (o-prev basel)]
-    (when (valid? rcand)
+    (when (valid? rcand basel)
       (loop [x rcand]
         (if (in-circle? (dest basel) (org basel) (dest rcand) (dest (o-prev rcand)))
           (recur (slide-right! x))
@@ -148,7 +148,8 @@
     2 (let [a (make-edge!)]
         (set-org! a (sites 0))
         (set-dest! a (sites 1))
-        [a (.sym a)])
+        (println "TWO POINTS: one edge:" a)
+        [a (sym a)])
 
     3 (let [[s1 s2 s3] (sort-xy sites)
             ;; create edge a connecting s1 to s2 and edge b connecting s2 to s3:
@@ -174,9 +175,10 @@
           [rdi rdo] (delaunay r)
           ;; compute the lower common tangent of l and r:
           [ldi rdi] (cond
-                     (left-of? (org rdi))      [(l-next ldi) rdi]
+                     (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
                      (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
                      :else                     [ldi rdi])
+          _ (println "lower common tangent:" ldi rdi)
           ;; create a first cross edge basel from (org rdi) to (org ldi):
           basel (connect! (sym rdi) ldi)
           ldo (if (= (org ldi) (org ldo))
@@ -186,7 +188,7 @@
                 basel
                 rdo)
 
-          valid (fn [edge] (right-of? (dest edge) basel))
+          valid? (fn [edge] (right-of? (dest edge) basel))
 
           ;; this is the merge loop:
 
@@ -203,7 +205,7 @@
         ;; if both are valid, then choose the appropriate one using the in-circle? test:
         (if (or (not (valid? lcand))
                 (and (valid? rcand)
-                     (in-circle? (dest lcand) (org lcand) org rcand) (dest rcand)))
+                     (in-circle? (dest lcand) (org lcand) (org rcand) (dest rcand))))
           ;; add cross edge from (dest rcand) to (dest basel):
           (connect! rcand (sym basel))
           ;; else add cross edge from (org basel) to (dest lcand):

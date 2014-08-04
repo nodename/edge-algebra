@@ -3,14 +3,15 @@
 ;; A Node represents either a vertex or a face of the graph
 
 
-(definterface INode
-  (getEdgeRecord [])
-  (setEdgeRecord [er]))
+(defprotocol INode
+  (getEdgeRecord [this])
+  (setEdgeRecord [this er]))
 
 (deftype Node [r ; rotation
                f ; flip or orientation
                unique-id
-               ^:volatile-mutable edge-record ;; the containing edge-record
+               #+clj ^:volatile-mutable edge-record ;; the containing edge-record
+               #+cljs ^:mutable edge-record
                ]
   INode
   (getEdgeRecord [this]
@@ -24,7 +25,7 @@
 (defn new-node!
   [r f & {:keys [clone-of]
           :or {clone-of nil}}]
-  (->Node
+  (Node.
    r
    f
    (if (nil? clone-of)

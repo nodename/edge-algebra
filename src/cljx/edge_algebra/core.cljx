@@ -19,13 +19,17 @@
             [edge-algebra.edge :refer [o-next rot]]))
 
 ;; ## The Two Operators Exported by the Library
+;; <img src="make-edge.jpg" />
 
 (defn make-edge!
   []
   (get-e0 (new-edge-record!)))
 
+;; <img src="splice-1.jpg" />
+;; <img src="splice-2.jpg" />
 
 (defn splice!
+  "splice! is its own inverse!"
   [edge0 edge1]
   (let [edge0-next (o-next edge0)
         edge1-next (o-next edge1)

@@ -2,28 +2,34 @@
   (:require [edge-algebra.record :refer [get-node get-edge]]))
 
 
-;; Edges need a mutable o-next field so we make it a type with a volatile field.
+;; Edges need a mutable next field so we make it a type with a volatile field.
 ;; http://macromancy.com/2014/01/16/data-structures-clojure-singly-linked-list.html
 
-(definterface IEdge
-  (getNext [])
-  (setNext [e])
-  (getEdgeRecord [])
-  (setEdgeRecord [er])
-  (getData [])
-  (setData [data]))
+(defprotocol IEdge
+  (getNext [this])
+  (setNext [this e])
+  (getEdgeRecord [this])
+  (setEdgeRecord [this er])
+  (getData [this])
+  (setData [this data]))
+
+(declare sym)
 
 (deftype Edge [r ; rotation
                f ; flip or orientation
-               ^:volatile-mutable o-next
-               ^:volatile-mutable edge-record ; the containing edge-record
-               ^:volatile-mutable data]
+               #+clj ^:volatile-mutable next
+               #+cljs ^:mutable next
+               #+clj ^:volatile-mutable edge-record ; the containing edge-record
+               #+cljs ^:mutable edge-record ; the containing edge-record
+               #+clj ^:volatile-mutable data
+               #+cljs ^:mutable data
+               ]
   IEdge
   (getNext [this]
-           o-next)
+           next)
 
   (setNext [this e]
-           (set! o-next e)
+           (set! next e)
            this)
 
   (getEdgeRecord [this]
@@ -38,13 +44,17 @@
 
   (setData [this d]
            (set! data d)
-           this))
+           this)
+
+  Object
+  (toString [this]
+            (str r " " f " " data "->" (.getData (sym this)))))
 
 
 
 (defn new-edge!
   [r f]
-  (->Edge r f nil nil nil))
+  (Edge. r f nil nil nil))
 
 
 
