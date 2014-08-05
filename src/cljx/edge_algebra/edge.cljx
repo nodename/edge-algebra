@@ -69,25 +69,29 @@
 
 (defn origin-vertex
   [edge]
-  (get-node (.getEdgeRecord edge) (+ (.-r edge) 3) (.-f edge)))
+  (let [r (+ (.-r edge) 3)
+        f (.-f edge)]
+    (get-node (.getEdgeRecord edge) r f)))
 
 (defn dest-vertex
   [edge]
-  (get-node (.getEdgeRecord edge) (+ (.-r edge) 1) (.-f edge)))
+  (let [r (+ (.-r edge) 1)
+        f (.-f edge)]
+    (get-node (.getEdgeRecord edge) r f)))
 
 ;; ## Orientation: left-face and right-face
 
 (defn left-face
   [edge]
-  (let [r (.-r edge)
+  (let [r (+ (+ (.-r edge) 2) (* 2 (.-f edge)))
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) (+ (+ r 2) (* 2 f)) f)))
+    (get-node (.getEdgeRecord edge) r f)))
 
 (defn right-face
   [edge]
-  (let [r (.-r edge)
+  (let [r (+ (.-r edge) (* 2 (.-f edge)))
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) (+ r (* 2 f)) f)))
+    (get-node (.getEdgeRecord edge) r f)))
 
 
 ;; get the three related edges within the same edge-record: rot, sym, and flip
@@ -95,25 +99,25 @@
 (defn rot
   ([edge] (rot 1 edge))
   ([exponent edge]
-   (let [r (.-r edge)
+   (let [r (+ (.-r edge) (* (+ 1 (* 2 (.-f edge))) exponent))
          f (.-f edge)]
-     (get-edge (.getEdgeRecord edge) (+ r (* (+ 1 (* 2 f)) exponent)) f))))
+     (get-edge (.getEdgeRecord edge) r f))))
 
 (defn sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
   ([edge] (sym 1 edge))
   ([exponent edge]
-   (let [r (.-r edge)
+   (let [r (+ (.-r edge) (* 2 exponent))
          f (.-f edge)]
-     (get-edge (.getEdgeRecord edge) (+ r (* 2 exponent)) f))))
+     (get-edge (.getEdgeRecord edge) r f))))
 
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
   ([edge] (flip 1 edge))
   ([exponent edge]
    (let [r (.-r edge)
-         f (.-f edge)]
-     (get-edge (.getEdgeRecord edge) r (+ f exponent)))))
+         f (+ (.-f edge) exponent)]
+     (get-edge (.getEdgeRecord edge) r f))))
 
 
 ;; get connected edges: oPrev. oNext, dPrev, dNext, lPrev, lNext, rPrev, rNext

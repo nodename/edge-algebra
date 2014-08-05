@@ -178,7 +178,7 @@
          ;; otherwise the three points are collinear:
          :else [a (sym b)]))
     ;;
-    ;; The default case, four or more sites, divide and conquer:
+    ;; The default case, four or more sites: divide and conquer
     ;;
     (let [[l r] (halves sites)
           [ldo ldi] (delaunay l)
@@ -189,18 +189,18 @@
                      (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
                      :else                     [ldi rdi])
           ;;
-          ;; create a first cross edge basel from (org rdi) to (org ldi):
-          basel (connect! (sym rdi) ldi)
+          ;; create a first cross edge initial-basel from (org rdi) to (org ldi):
+          initial-basel (connect! (sym rdi) ldi)
           ldo (if (= (org ldi) (org ldo))
-                (sym basel)
+                (sym initial-basel)
                 ldo)
           rdo (if (= (org rdi) (org rdo))
-                basel
+                initial-basel
                 rdo)]
         ;;
         ;; this is the merge loop:
         ;;
-        (loop [basel basel]
+        (loop [basel initial-basel]
           ;; locate the first l point (dest lcand) to be encountered by the rising bubble,
           ;; and delete l edges out of (dest basel) that fail the circle test:
           (let [lcand (bubble-left! basel)
