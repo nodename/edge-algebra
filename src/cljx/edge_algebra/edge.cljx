@@ -11,7 +11,7 @@
   (getEdgeRecord [this])
   (setEdgeRecord [this er])
   (getData [this])
-  (setData [this data]))
+  (setData [this d]))
 
 (declare sym)
 
