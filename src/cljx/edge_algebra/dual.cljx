@@ -4,12 +4,7 @@
                                        origin-vertex dest-vertex
                                        left-face right-face]]))
 
-;; the fully qualified types:
-(def Edge edge_algebra.edge.Edge)
-(def Node edge_algebra.node.Node)
-
-
-;; node roles with respect to an edge:
+;; Node roles with respect to an edge:
 (def node-roles [
                  :right-face
                  :dest-vertex

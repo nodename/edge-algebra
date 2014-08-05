@@ -116,6 +116,7 @@
 (deftest flip-functions-property-5
   ;; Subdivision s contains edge e iff s contains e.flip
   )
+;;
 
 (deftest useful-property-1
   (is (identical?

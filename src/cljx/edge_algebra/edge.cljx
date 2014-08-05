@@ -19,8 +19,8 @@
                f ; flip or orientation
                #+clj ^:volatile-mutable next
                #+cljs ^:mutable next
-               #+clj ^:volatile-mutable edge-record ; the containing edge-record
-               #+cljs ^:mutable edge-record ; the containing edge-record
+               #+clj ^:volatile-mutable edge-record
+               #+cljs ^:mutable edge-record
                #+clj ^:volatile-mutable data
                #+cljs ^:mutable data
                ]
@@ -69,11 +69,11 @@
 
 (defn origin-vertex
   [edge]
-  (get-node (.getEdgeRecord edge) (+ (.r edge) 3) (.f edge)))
+  (get-node (.getEdgeRecord edge) (+ (.-r edge) 3) (.-f edge)))
 
 (defn dest-vertex
   [edge]
-  (get-node (.getEdgeRecord edge) (+ (.r edge) 1) (.f edge)))
+  (get-node (.getEdgeRecord edge) (+ (.-r edge) 1) (.-f edge)))
 
 ;; ## Orientation: left-face and right-face
 

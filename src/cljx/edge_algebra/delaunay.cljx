@@ -100,9 +100,9 @@
 
 (defn halves
   [seq]
-  (let [half (/ (count seq) 2)
+  (let [half-way (/ (count seq) 2)
         sorted-seq (sort-xy seq)]
-    (map vec (split-at half sorted-seq))))
+    (map vec (split-at half-way sorted-seq))))
 
 
 (defn slide-left!
@@ -177,7 +177,9 @@
                              [(sym c) c]))
          ;; otherwise the three points are collinear:
          :else [a (sym b)]))
-
+    ;;
+    ;; The default case, four or more sites, divide and conquer:
+    ;;
     (let [[l r] (halves sites)
           [ldo ldi] (delaunay l)
           [rdi rdo] (delaunay r)
@@ -186,7 +188,7 @@
                      (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
                      (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
                      :else                     [ldi rdi])
-
+          ;;
           ;; create a first cross edge basel from (org rdi) to (org ldi):
           basel (connect! (sym rdi) ldi)
           ldo (if (= (org ldi) (org ldo))
@@ -195,8 +197,9 @@
           rdo (if (= (org rdi) (org rdo))
                 basel
                 rdo)]
-
+        ;;
         ;; this is the merge loop:
+        ;;
         (loop [basel basel]
           ;; locate the first l point (dest lcand) to be encountered by the rising bubble,
           ;; and delete l edges out of (dest basel) that fail the circle test:
