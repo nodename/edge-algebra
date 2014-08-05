@@ -160,63 +160,54 @@
 ;; that allow an exponent indicating how many steps (positive or negative)
 ;; to traverse the respective rings:
 
-(def invert {:next :prev
-             :prev :next})
-
-(def ops
-  {:origin {:next onext :prev oprev}
-   :dest   {:next dnext :prev dprev}
-   :left   {:next lnext :prev lprev}
-   :right  {:next rnext :prev rprev}})
-
-
-(defn rectify
-  "Get the correct op (invert direction and exponent if exponent is negative)"
-  [link direction exponent]
-  (let [[direction exponent] (if (neg? exponent)
-                               [(invert direction) (- exponent)]
-                               [direction exponent])
-        op (get-in ops [link direction])]
-
-    [op exponent]))
+(def invert {onext oprev
+             oprev onext
+             dnext dprev
+             dprev dnext
+             lnext lprev
+             lprev lnext
+             rnext rprev
+             rprev rnext})
 
 
 (defn neighbor
-  [edge link direction exponent]
-  (let [[op exponent] (rectify link direction exponent)]
+  [edge op exponent]
+  (let [[op exponent] (if (neg? exponent)
+                        [(invert op) (- exponent)]
+                        [op exponent])]
     (nth (iterate op edge) exponent)))
 
 
 (defn o-next
   ([edge] (o-next 1 edge))
-  ([exponent edge] (neighbor edge :origin :next exponent)))
+  ([exponent edge] (neighbor edge onext exponent)))
 
 (defn o-prev
   ([edge] (o-prev 1 edge))
-  ([exponent edge] (neighbor edge :origin :prev exponent)))
+  ([exponent edge] (neighbor edge oprev exponent)))
 
 (defn d-next
   ([edge] (d-next 1 edge))
-  ([exponent edge] (neighbor edge :dest :next exponent)))
+  ([exponent edge] (neighbor edge dnext exponent)))
 
 (defn d-prev
   ([edge] (d-prev 1 edge))
-  ([exponent edge] (neighbor edge :dest :prev exponent)))
+  ([exponent edge] (neighbor edge dprev exponent)))
 
 (defn l-next
   ([edge] (l-next 1 edge))
-  ([exponent edge] (neighbor edge :left :next exponent)))
+  ([exponent edge] (neighbor edge lnext exponent)))
 
 (defn l-prev
   ([edge] (l-prev 1 edge))
-  ([exponent edge] (neighbor edge :left :prev exponent)))
+  ([exponent edge] (neighbor edge lprev exponent)))
 
 (defn r-next
   ([edge] (r-next 1 edge))
-  ([exponent edge] (neighbor edge :right :next exponent)))
+  ([exponent edge] (neighbor edge rnext exponent)))
 
 (defn r-prev
   ([edge] (r-prev 1 edge))
-  ([exponent edge] (neighbor edge :right :prev exponent)))
+  ([exponent edge] (neighbor edge rprev exponent)))
 
 
