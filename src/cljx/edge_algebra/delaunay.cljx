@@ -78,7 +78,7 @@
 ;; we need just two geometric primitives: in-circle? and ccw?
 
 (defn in-circle?
-  "The predicate in-circle(a, b, c, d) is defined to be true if and only if
+  "The predicate in-circle? is defined to be true if and only if
   point d is interior to the region of the plane that is bounded by the
   oriented circle abc and lies to the left of it."
   [a b c d]
@@ -91,7 +91,7 @@
 
 
 (defn ccw?
-  "The predicate ccw is true if the points a, b, and c form a counterclockwise-oriented triangle."
+  "The predicate ccw? is true if the points a, b, and c form a counterclockwise-oriented triangle."
   [a b c]
   (pos? (norm-sign2 a b c)))
 
@@ -135,7 +135,9 @@
   (right-of? (dest edge) cross-edge))
 
 (defn bubble-left!
-  "Find left candidate edge."
+  "Locate the first l point (dest l-candidate) to be encountered by the rising bubble,
+   and delete any l edges coming out of (dest cross-edge) that fail the circle test.
+   Return the left candidate edge."
   [cross-edge]
   (let [initial-edge (o-next (sym cross-edge))]
     (if (dest-above? initial-edge cross-edge)
@@ -146,7 +148,7 @@
       initial-edge)))
 
 (defn bubble-right!
-  "Find right candidate edge."
+  "Symmetrically to bubble-left!, return the right candidate edge."
   [cross-edge]
   (let [initial-edge (o-prev cross-edge)]
     (if (dest-above? initial-edge cross-edge)
@@ -157,7 +159,7 @@
       initial-edge)))
 
 (defn delaunay
-  "Calculate the Delaunay triangulation of the sites and return
+  "Calculate the Delaunay triangulation of the sites; return
    the counterclockwise convex hull edge out of the leftmost vertex
    and the clockwise convex hull edge out of the rightmost vertex."
   [sites]
@@ -207,12 +209,7 @@
           ;; This is the merge loop:
           ;;
           (loop [cross-edge initial-cross-edge]
-            (let [
-                  ;; Locate the first l point (dest l-candidate) to be encountered by the rising bubble,
-                  ;; and delete any l edges coming out of (dest cross-edge) that fail the circle test:
-                  l-candidate (bubble-left! cross-edge)
-                  ;;
-                  ;; Symmetrically, locate the first r point to be hit, and delete r edges:
+            (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
                   ;;
                   ;; Shorthand for dest-above?:
