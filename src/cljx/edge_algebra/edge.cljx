@@ -128,31 +128,31 @@
 
 ;; find the QuadEdge immediately following this one
 ;; counterclockwise in the ring of edges out of originVertex:
-(defn onext [edge] (.getNext edge))
+(defn ^:private onext [edge] (.getNext edge))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:
-(def oprev (comp rot onext rot))
+(def ^:private oprev (comp rot onext rot))
 
 ;; find the QuadEdge immediately following this one
 ;; counterclockwise in the ring of edges into destVertex:
-(def dnext (comp sym onext sym))
+(def ^:private dnext (comp sym onext sym))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges into destVertex:
-(def dprev (comp #(rot -1 %) onext #(rot -1 %)))
+(def ^:private dprev (comp #(rot -1 %) onext #(rot -1 %)))
 
 ;; find the next counterclockwise QuadEdge with the same left face:
-(def lnext (comp rot onext #(rot -1 %)))
+(def ^:private lnext (comp rot onext #(rot -1 %)))
 
 ;; find the next clockwise QuadEdge with the same left face:
-(def lprev (comp sym onext))
+(def ^:private lprev (comp sym onext))
 
 ;; find the next clockwise QuadEdge with the same right face:
-(def rnext (comp #(rot -1 %) onext rot))
+(def ^:private rnext (comp #(rot -1 %) onext rot))
 
 ;; find the next clockwise QuadEdge with the same right face:
-(def rprev (comp onext sym))
+(def ^:private rprev (comp onext sym))
 
 ;; Now we develop the interfaces to these operations
 ;; that allow an exponent indicating how many steps (positive or negative)

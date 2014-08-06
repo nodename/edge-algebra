@@ -91,7 +91,8 @@
 
 
 (defn ccw?
-  "The predicate ccw? is true if the points a, b, and c form a counterclockwise-oriented triangle."
+  "The predicate ccw? is true if the points a, b, and c
+   form a counterclockwise-oriented triangle."
   [a b c]
   (pos? (norm-sign2 a b c)))
 
@@ -142,7 +143,8 @@
   (let [initial-edge (o-next (sym cross-edge))]
     (if (dest-above? initial-edge cross-edge)
       (loop [edge initial-edge]
-        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge) (dest (o-next edge)))
+        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
+                        (dest (o-next edge)))
           (recur (slide-left! edge))
           edge))
       initial-edge)))
@@ -153,7 +155,8 @@
   (let [initial-edge (o-prev cross-edge)]
     (if (dest-above? initial-edge cross-edge)
       (loop [edge initial-edge]
-        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge) (dest (o-prev edge)))
+        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
+                        (dest (o-prev edge)))
           (recur (slide-right! edge))
           edge))
       initial-edge)))
@@ -222,7 +225,8 @@
               (when (or (dest-above? l-candidate) (dest-above? r-candidate))
                 ;; The next cross edge is to be connected to either
                 ;; (dest l-candidate) or (dest r-candidate).
-                ;; If both dests are above cross-edge, then choose the appropriate one using the in-circle? test:
+                ;; If both dests are above cross-edge,
+                ;; then choose the appropriate one using the in-circle? test:
                 (if (or (not (dest-above? l-candidate))
                         (and (dest-above? r-candidate)
                              (in-circle? (dest l-candidate) (org l-candidate) (org r-candidate)
