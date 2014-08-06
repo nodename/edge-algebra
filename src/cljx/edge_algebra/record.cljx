@@ -1,7 +1,16 @@
 (ns edge-algebra.record)
 
+;; This namespace holds some edge-record related vars
+;; that we want to be able to require without introducing a dependency cycle.
+
+
+;; This replaces the Java "class" function for multimethod dispatch.
+;; "class" is not available on the JS platform.
+;;
 (defprotocol IType
   (getType [this]))
+
+;; Edge-record accessor functions
 
 (defn- get-elt
   [edge-record type r f]

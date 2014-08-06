@@ -15,7 +15,7 @@
 
       :plugins [[lein-cljsbuild "0.3.0"]
                 [lein-simpleton "1.1.0"]
-                [com.keminglabs/cljx "0.3.2"]]
+                [com.keminglabs/cljx "0.4.0"]]
 
       :cljx {:builds [{:source-paths ["src/cljx"]
                        :output-path "target/generated/clj"

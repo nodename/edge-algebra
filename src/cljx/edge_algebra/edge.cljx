@@ -1,10 +1,6 @@
 (ns edge-algebra.edge
   (:require [edge-algebra.record :refer [IType get-node get-edge]]))
 
-
-;; Edges need a mutable next field so we make it a type with a volatile field.
-;; http://macromancy.com/2014/01/16/data-structures-clojure-singly-linked-list.html
-
 (defprotocol IEdge
   (getNext [this])
   (setNext [this e])
@@ -51,6 +47,8 @@
             :edge)
 
   Object
+  ;; This one is a bit smelly because it implies knowledge
+  ;; of what an application might store in the data fields:
   (toString [this]
             (str r " " f " " data "->" (.getData (sym this)))))
 

@@ -1,9 +1,12 @@
 (ns edge-algebra.delaunay
   (:require
-   ;; the two topological operations exported by the edge-algebra library:
-   [edge-algebra.core :refer [make-edge! splice!]]
-   ;; some neighboring-edge properties:
-   [edge-algebra.edge :refer [sym l-next o-next o-prev r-prev]]
+   ;; the two topological operations exported by the edge-algebra library
+   ;; are make-edge!, which we use to define our own make-edge! (see below),
+   ;; and splice!:
+   [edge-algebra.core :as core :refer [splice!]]
+   ;;
+   ;; some functions for navigating to related edges:
+   [edge-algebra.edge :refer [sym o-next o-prev l-next r-prev]]
    ;;
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core.vector :refer [vec2]]
@@ -12,10 +15,12 @@
 
   (:refer-clojure :exclude [swap!]))
 
+;; An alias for the 2-D point constructor:
 (def pt vec2)
 
 
-;; For the Delaunay application, the data field of an Edge will contain the coordinates of its origin.
+;; For the Delaunay application, the data field of an Edge
+;; will contain the coordinates of its origin:
 (defn org
   [edge]
   (.getData edge))
@@ -24,7 +29,8 @@
   [edge coords]
   (.setData edge coords))
 
-;; and similarly, the data field of its symmetric Edge will contain the coordinates of its destination.
+;; and similarly, the data field of its symmetric Edge
+;; will contain the coordinates of its destination:
 (defn dest
   [edge]
   (org (sym edge)))
@@ -35,12 +41,16 @@
 
 
 
+(defn make-edge!
+  [org dest]
+  (-> (core/make-edge!)
+    (set-org! org)
+    (set-dest! dest)))
+
 
 (defn connect!
   [a b]
-  (let [e (make-edge!)]
-    (set-org! e (dest a))
-    (set-dest! e (org b))
+  (let [e (make-edge! (dest a) (org b))]
     (splice! e (l-next a))
     (splice! (sym e) b)
     e))
@@ -64,7 +74,8 @@
     (set-dest! e (dest b))))
 
 
-
+;; In addition to the two topological operations,
+;; we need just two geometric primitives: in-circle? and ccw?
 
 (defn in-circle?
   "The predicate in-circle(a, b, c, d) is defined to be true if and only if
@@ -108,121 +119,120 @@
 (defn slide-left!
   [edge]
   (let [t (o-next edge)]
-    ;(println "deleting edge" edge)
     (delete-edge! edge)
     t))
 
 (defn slide-right!
   [edge]
   (let [t (o-prev edge)]
-    ;(println "deleting edge" edge)
     (delete-edge! edge)
     t))
 
 
-(defn valid?
-  [edge basel]
-  {:pre [(some? edge) (some? basel)]}
-  (right-of? (dest edge) basel))
+(defn dest-above?
+  "Is the dest point of edge above this right-to-left cross-edge?"
+  [edge cross-edge]
+  (right-of? (dest edge) cross-edge))
 
 (defn bubble-left!
-  [basel]
-  (let [lcand (o-next (sym basel))]
-    (if (valid? lcand basel)
-      (loop [x lcand]
-        (if (in-circle? (dest basel) (org basel) (dest x) (dest (o-next x)))
-          (recur (slide-left! x))
-          x))
-      lcand)))
+  "Find left candidate edge."
+  [cross-edge]
+  (let [initial-edge (o-next (sym cross-edge))]
+    (if (dest-above? initial-edge cross-edge)
+      (loop [edge initial-edge]
+        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge) (dest (o-next edge)))
+          (recur (slide-left! edge))
+          edge))
+      initial-edge)))
 
 (defn bubble-right!
-  [basel]
-  (let [rcand (o-prev basel)]
-    (if (valid? rcand basel)
-      (loop [x rcand]
-        (if (in-circle? (dest basel) (org basel) (dest x) (dest (o-prev x)))
-          (recur (slide-right! x))
-          x))
-      rcand)))
+  "Find right candidate edge."
+  [cross-edge]
+  (let [initial-edge (o-prev cross-edge)]
+    (if (dest-above? initial-edge cross-edge)
+      (loop [edge initial-edge]
+        (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge) (dest (o-prev edge)))
+          (recur (slide-right! edge))
+          edge))
+      initial-edge)))
 
 (defn delaunay
   "Calculate the Delaunay triangulation of the sites and return
-   the counterclockwise convex hull edge out of the leftmost vertes
+   the counterclockwise convex hull edge out of the leftmost vertex
    and the clockwise convex hull edge out of the rightmost vertex."
   [sites]
-  (condp = (count sites)
-    1 nil
+  (let [sites (distinct sites)]
+    (condp = (count sites)
+      1 nil
 
-    2 (let [a (make-edge!)]
-        (set-org! a (sites 0))
-        (set-dest! a (sites 1))
-        [a (sym a)])
+      2 (let [a (make-edge! (sites 0) (sites 1))]
+          [a (sym a)])
 
-    3 (let [[s1 s2 s3] (sort-xy sites)
-            ;; create edge a connecting s1 to s2 and edge b connecting s2 to s3:
-            a (make-edge!)
-            b (make-edge!)]
-        (set-org! a s1)
-        (set-dest! a s2)
-        (set-org! b s2)
-        (set-dest! b s3)
-        (splice! (sym a) b)
-        ;; now close the triangle:
-        (cond
-         (ccw? s1 s2 s3) (do
-                           (connect! b a)
-                           [a (sym b)])
-         (ccw? s1 s3 s2) (do
-                           (let [c (connect! b a)]
-                             [(sym c) c]))
-         ;; otherwise the three points are collinear:
-         :else [a (sym b)]))
-    ;;
-    ;; The default case, four or more sites: divide and conquer
-    ;;
-    (let [[l r] (halves sites)
-          [ldo ldi] (delaunay l)
-          [rdi rdo] (delaunay r)
-          ;; compute the lower common tangent [ldi rdi] of l and r:
-          [ldi rdi] (cond
-                     (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
-                     (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
-                     :else                     [ldi rdi])
+      3 (let [[s1 s2 s3] (sort-xy sites)
+              a (make-edge! s1 s2)
+              b (make-edge! s2 s3)]
+          (splice! (sym a) b)
+          ;; Now close the triangle:
+          (cond
+           (ccw? s1 s2 s3) (do
+                             (connect! b a)
+                             [a (sym b)])
+           (ccw? s1 s3 s2) (do
+                             (let [c (connect! b a)]
+                               [(sym c) c]))
+           ;; Otherwise the three points are collinear:
+           :else [a (sym b)]))
+      ;;
+      ;; The default case, four or more sites: divide and conquer
+      ;;
+      (let [[l r] (halves sites)
+            [ldo ldi] (delaunay l)
+            [rdi rdo] (delaunay r)
+            ;; Compute the lower common tangent [ldi rdi] of l and r:
+            [ldi rdi] (cond
+                       (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
+                       (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
+                       :else                     [ldi rdi])
+            ;;
+            ;; Create initial-cross-edge from (org rdi) to (org ldi)
+            ;; (Note that we always choose the right-to-left direction for a cross-edge):
+            initial-cross-edge (connect! (sym rdi) ldi)
+            ldo (if (= (org ldi) (org ldo))
+                  (sym initial-cross-edge)
+                  ldo)
+            rdo (if (= (org rdi) (org rdo))
+                  initial-cross-edge
+                  rdo)]
           ;;
-          ;; create a first cross edge initial-basel from (org rdi) to (org ldi):
-          initial-basel (connect! (sym rdi) ldi)
-          ldo (if (= (org ldi) (org ldo))
-                (sym initial-basel)
-                ldo)
-          rdo (if (= (org rdi) (org rdo))
-                initial-basel
-                rdo)]
-        ;;
-        ;; this is the merge loop:
-        ;;
-        (loop [basel initial-basel]
-          ;; locate the first l point (dest lcand) to be encountered by the rising bubble,
-          ;; and delete l edges out of (dest basel) that fail the circle test:
-          (let [lcand (bubble-left! basel)
-                ;; symmetrically, locate the first r point to be hit, and delete r edges:
-                rcand (bubble-right! basel)]
+          ;; This is the merge loop:
+          ;;
+          (loop [cross-edge initial-cross-edge]
+            (let [
+                  ;; Locate the first l point (dest l-candidate) to be encountered by the rising bubble,
+                  ;; and delete any l edges coming out of (dest cross-edge) that fail the circle test:
+                  l-candidate (bubble-left! cross-edge)
+                  ;;
+                  ;; Symmetrically, locate the first r point to be hit, and delete r edges:
+                  r-candidate (bubble-right! cross-edge)
+                  ;;
+                  ;; Shorthand for dest-above?:
+                  dest-above? (fn [edge] (dest-above? edge cross-edge))]
+              ;;
+              ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
+              ;; then cross-edge is the upper common tangent and we're done.
+              ;;
+              ;; Otherwise:
+              (when (or (dest-above? l-candidate) (dest-above? r-candidate))
+                ;; The next cross edge is to be connected to either
+                ;; (dest l-candidate) or (dest r-candidate).
+                ;; If both dests are above cross-edge, then choose the appropriate one using the in-circle? test:
+                (if (or (not (dest-above? l-candidate))
+                        (and (dest-above? r-candidate)
+                             (in-circle? (dest l-candidate) (org l-candidate) (org r-candidate)
+                                         (dest r-candidate))))
+                  ;; Add new cross edge from (dest r-candidate) to (dest cross-edge):
+                  (recur (connect! r-candidate (sym cross-edge)))
+                  ;; Else add new cross edge from (org cross-edge) to (dest l-candidate):
+                  (recur (connect! (sym cross-edge) (sym l-candidate)))))))
 
-            ;; If lcand and rcand are both invalid,
-            ;; then basel is the upper common tangent and we're done.
-
-            ;; Otherwise:
-            (when (or (valid? lcand basel) (valid? rcand basel))
-              ;; the next cross edge is to be connected to either (dest lcand) or (dest rcand).
-              ;; if both are valid, then choose the appropriate one using the in-circle? test:
-              (if (or (not (valid? lcand basel))
-                      (and (valid? rcand basel)
-                           (in-circle? (dest lcand) (org lcand) (org rcand) (dest rcand))))
-                ;; add cross edge from (dest rcand) to (dest basel):
-                (recur (connect! rcand (sym basel)))
-                ;; else add cross edge from (org basel) to (dest lcand):
-                (recur (connect! (sym basel) (sym lcand)))))))
-
-      [ldo rdo])))
-
-
-
+        [ldo rdo]))))
