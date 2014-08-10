@@ -1,4 +1,4 @@
-(ns edge-algebra.delaunay
+(ns delaunay.div-conq
   (:require
    ;; the two topological operations exported by the edge-algebra library
    ;; are make-edge!, which we use to define our own make-edge! (see below),
@@ -11,9 +11,7 @@
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
-   [thi.ng.geom.core.utils :refer [norm-sign2]])
-
-  (:refer-clojure :exclude [swap!]))
+   [thi.ng.geom.core.utils :refer [norm-sign2]]))
 
 ;; An alias for the 2-D point constructor:
 (def pt vec2)
@@ -61,19 +59,6 @@
   [e]
   (splice! e (o-prev e))
   (splice! (sym e) (o-prev (sym e))))
-
-
-;; for the incremental algorithm:
-(defn swap!
-  [e]
-  (let [a (o-prev e)
-        b (o-prev (sym e))]
-    (splice! e a)
-    (splice! (sym e) b)
-    (splice! e (l-next a))
-    (splice! (sym e) (l-next b))
-    (set-org! e (dest a))
-    (set-dest! e (dest b))))
 
 
 ;; In addition to the two topological operations,

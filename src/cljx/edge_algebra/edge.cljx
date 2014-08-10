@@ -13,12 +13,9 @@
 
 (deftype Edge [r ; rotation
                f ; flip or orientation
-               #+clj ^:volatile-mutable next
-               #+cljs ^:mutable next
-               #+clj ^:volatile-mutable edge-record
-               #+cljs ^:mutable edge-record
-               #+clj ^:volatile-mutable data
-               #+cljs ^:mutable data
+               #+clj ^:volatile-mutable data #+cljs ^:mutable data
+               #+clj ^:volatile-mutable edge-record #+cljs ^:mutable edge-record
+               #+clj ^:volatile-mutable next #+cljs ^:mutable next
                ]
   IEdge
   (getNext [this]
