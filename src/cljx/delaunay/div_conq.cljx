@@ -229,8 +229,8 @@
 
 
 (defn with-reporting
-  [f & [args]]
-  (with-redefs [make-edge! (wrap-with-name-and-args-reporting make-edge!)
-                delete-edge! (wrap-with-name-and-args-reporting delete-edge!)
-                in-circle? (wrap-with-name-and-args-reporting in-circle?)]
+  [ch f & [args]]
+  (with-redefs [make-edge! (wrap-with-name-and-args-reporting ch make-edge!)
+                delete-edge! (wrap-with-name-and-args-reporting ch delete-edge!)
+                in-circle? (wrap-with-name-and-args-reporting ch in-circle?)]
     (f args)))
