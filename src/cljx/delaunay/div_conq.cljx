@@ -11,7 +11,9 @@
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
-   [thi.ng.geom.core.utils :refer [norm-sign2]]))
+   [thi.ng.geom.core.utils :refer [norm-sign2]]
+
+   [delaunay.utils.reporting :refer [wrap-with-name-and-args-reporting]]))
 
 ;; An alias for the 2-D point constructor:
 (def pt vec2)
@@ -224,3 +226,11 @@
                   (recur (connect! (sym cross-edge) (sym l-candidate)))))))
 
         [ldo rdo]))))
+
+
+(defn with-reporting
+  [f & [args]]
+  (with-redefs [make-edge! (wrap-with-name-and-args-reporting make-edge!)
+                delete-edge! (wrap-with-name-and-args-reporting delete-edge!)
+                in-circle? (wrap-with-name-and-args-reporting in-circle?)]
+    (f args)))
