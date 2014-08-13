@@ -1,6 +1,7 @@
 (ns delaunay.incremental
   (:refer-clojure :exclude [swap!]))
 
+#_
 (defn swap!
   [e]
   (let [a (o-prev e)

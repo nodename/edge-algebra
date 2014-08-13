@@ -1,5 +1,7 @@
 (ns delaunay.utils.reporting
-  (:require [clojure.core.async :refer [>!!]]))
+  #+clj (:require [clojure.core.async :refer [put!]])
+  #+cljs (:require [cljs.core.async :refer [put!]]))
+
 
 (defn get-fn-init-sym
   "Return the symbol that was used to define the function."
@@ -14,9 +16,10 @@
 
 
 (defn wrap-with-name-and-args-reporting
-"Return a function which will put the symbol and current args of f onto ch before running f."
+  "Return a function which will put the symbol
+  and current args of f onto ch before invoking f."
   [ch f]
   (fn [& args]
-    (>!! ch (vec (concat [(get-fn-init-sym f)] args)))
+    (put! ch (vec (concat [(get-fn-init-sym f)] args)))
     (apply f args)))
 

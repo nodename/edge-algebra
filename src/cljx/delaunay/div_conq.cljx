@@ -12,7 +12,7 @@
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
    [thi.ng.geom.core.utils :refer [norm-sign2]]
-
+   ;;
    [delaunay.utils.reporting :refer [wrap-with-name-and-args-reporting]]))
 
 ;; An alias for the 2-D point constructor:
@@ -155,7 +155,7 @@
    the counterclockwise convex hull edge out of the leftmost vertex
    and the clockwise convex hull edge out of the rightmost vertex."
   [sites]
-  (let [sites (distinct sites)]
+  (let [sites (vec (distinct sites))]
     (condp = (count sites)
       1 nil
 
@@ -204,20 +204,19 @@
             (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
                   ;;
-                  ;; Shorthand for dest-above?:
-                  dest-above? (fn [edge] (dest-above? edge cross-edge))]
+                  dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
               ;;
               ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
               ;; then cross-edge is the upper common tangent and we're done.
               ;;
               ;; Otherwise:
-              (when (or (dest-above? l-candidate) (dest-above? r-candidate))
+              (when (or (dest-above-cross-edge? l-candidate) (dest-above-cross-edge? r-candidate))
                 ;; The next cross edge is to be connected to either
                 ;; (dest l-candidate) or (dest r-candidate).
                 ;; If both dests are above cross-edge,
                 ;; then choose the appropriate one using the in-circle? test:
-                (if (or (not (dest-above? l-candidate))
-                        (and (dest-above? r-candidate)
+                (if (or (not (dest-above-cross-edge? l-candidate))
+                        (and (dest-above-cross-edge? r-candidate)
                              (in-circle? (dest l-candidate) (org l-candidate) (org r-candidate)
                                          (dest r-candidate))))
                   ;; Add new cross edge from (dest r-candidate) to (dest cross-edge):
