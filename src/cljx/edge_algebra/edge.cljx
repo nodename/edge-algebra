@@ -64,7 +64,7 @@
 (defn get-edge-record
   [edge]
   #+clj (.getEdgeRecord edge)
-  #+cljs (.etEdgeRecord edge))
+  #+cljs (getEdgeRecord edge))
 
 
 
