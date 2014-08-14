@@ -32,7 +32,7 @@
 
   (setEdgeRecord [this er]
                  #+clj (set! edge-record er)
-                 #+cljs (aset this "edge-record" er)
+                 #+cljs (aset this "edge_record" er) ;; underscore? pwetty twicky!
                  this)
 
   (getData [this]
@@ -52,7 +52,7 @@
   ;; of what an application might store in the data fields:
   (toString [this]
             (str r " " f " " data
-            "->" (#+clj .getData #+cljs getData (sym this)))))
+            "->" #+clj (.getData (sym this) #+cljs (.-data (sym this))))))
 
 
 (defn new-edge!

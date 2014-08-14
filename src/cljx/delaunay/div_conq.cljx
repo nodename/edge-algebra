@@ -9,6 +9,7 @@
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
    ;;
    ;; geometry support from toxi's geom library:
+   [thi.ng.geom.core :as g]
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
    [thi.ng.geom.core.utils :refer [norm-sign2]]
@@ -71,12 +72,15 @@
   point d is interior to the region of the plane that is bounded by the
   oriented circle abc and lies to the left of it."
   [a b c d]
-  (let [m (matrix44 (.-x a) (.-y a) (.mag-squared a) 1
-                    (.-x b) (.-y b) (.mag-squared b) 1
-                    (.-x c) (.-y c) (.mag-squared c) 1
-                    (.-x d) (.-y d) (.mag-squared d) 1)]
+  (let [matrix (matrix44 (.-x a) (.-y a) (#+clj .mag-squared #+cljs g/mag-squared a) 1
+                         (.-x b) (.-y b) (#+clj .mag-squared #+cljs g/mag-squared b) 1
+                         (.-x c) (.-y c) (#+clj .mag-squared #+cljs g/mag-squared c) 1
+                         (.-x d) (.-y d) (#+clj .mag-squared #+cljs g/mag-squared d) 1)]
+   ; (println (delaunay.utils.reporting/get-fn-init-sym (.-determinant matrix)))
 
-    (> (.determinant m) 0)))
+    (> #+clj (.determinant matrix)
+       #+cljs (.call thi.ng.geom.core.matrix.Matrix44.prototype.thi$ng$geom$core$PDeterminant$determinant$arity$1 matrix)
+       0)))
 
 
 (defn ccw?
