@@ -28,10 +28,16 @@
 
       :hooks [cljx.hooks]
 
-      :cljsbuild {:builds [{:source-paths ["src/cljs" "target/generated/cljs"]
-                            :compiler {:output-to "resources/public/build/deps.js"
-                                       :output-dir "resources/public/build"
-                                     ;  :pretty-print true
-                                     ;  :optimizations :advanced}}]})
-                                     ;  :optimizations :simple}}]})
-                                       :optimizations :none}}]})
+      :cljsbuild {:builds [{:id "dev"
+                            :source-paths ["src/cljs" "target/generated/cljs"]
+                            :compiler {:output-to "resources/public/build/dev/edge_algebra.dev.js"
+                                       :output-dir "resources/public/build/dev"
+                                       :source-map true
+                                       :optimizations :none}}
+
+                           {:id "prod"
+                            :source-paths ["src/cljs" "target/generated/cljs"]
+                            :compiler {:output-to "resources/public/build/prod/edge_algebra.prod.js"
+                                       :output-dir "resources/public/build/prod"
+                                       :source-map "edge_algebra.prod.js.map"
+                                       :optimizations :advanced}}]})
