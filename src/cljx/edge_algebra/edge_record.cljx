@@ -1,6 +1,6 @@
 (ns edge-algebra.edge-record
-  (:require [edge-algebra.node :refer [new-node!]]
-            [edge-algebra.edge :refer [new-edge!]]))
+  (:require [edge-algebra.node :as n :refer [new-node!]]
+            [edge-algebra.edge :as e :refer [new-edge!]]))
 
 
 ;; An EdgeRecord represents eight edges:
@@ -42,17 +42,17 @@
 
       (doseq [rotation [0 1 2 3]]
         ;; back-pointers oh well:
-        (.setEdgeRecord (get-in nodes [rotation orientation]) er)
-        (.setEdgeRecord (get-in edges [rotation orientation]) er))
+        (#+clj .setEdgeRecord #+cljs e/setEdgeRecord (get-in edges [rotation orientation]) er)
+        (#+clj .setEdgeRecord #+cljs n/setEdgeRecord (get-in nodes [rotation orientation]) er))
 
       (let [e0o (get-in edges [0 orientation])
             e1o (get-in edges [1 orientation])
             e2o (get-in edges [2 orientation])
             e3o (get-in edges [3 orientation])]
-        (.setNext e0o e0o)
-        (.setNext e1o e3o)
-        (.setNext e2o e2o)
-        (.setNext e3o e1o)))
+        (#+clj .setNext #+cljs e/setNext e0o e0o)
+        (#+clj .setNext #+cljs e/setNext e1o e3o)
+        (#+clj .setNext #+cljs e/setNext e2o e2o)
+        (#+clj .setNext #+cljs e/setNext e3o e1o)))
 
     er))
 

@@ -19,7 +19,8 @@
     edge-record)
 
   (setEdgeRecord [this er]
-    (set! edge-record er)
+    #+clj (set! edge-record er)
+    #+cljs (aset this "edge-record" er)
     this)
 
   IType

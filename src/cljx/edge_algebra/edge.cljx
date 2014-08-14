@@ -9,6 +9,7 @@
   (getData [this])
   (setData [this d]))
 
+
 (declare sym)
 
 (deftype Edge [r ; rotation
@@ -22,21 +23,24 @@
            next)
 
   (setNext [this e]
-           (set! next e)
+           #+clj (set! next e)
+           #+cljs (aset this "next" e)
            this)
 
   (getEdgeRecord [this]
                  edge-record)
 
   (setEdgeRecord [this er]
-                 (set! edge-record er)
+                 #+clj (set! edge-record er)
+                 #+cljs (aset this "edge-record" er)
                  this)
 
   (getData [this]
            data)
 
   (setData [this d]
-           (set! data d)
+           #+clj (set! data d)
+           #+cljs (aset this "data" d)
            this)
 
   IType
@@ -47,13 +51,20 @@
   ;; This one is a bit smelly because it implies knowledge
   ;; of what an application might store in the data fields:
   (toString [this]
-            (str r " " f " " data "->" (.getData (sym this)))))
-
+            (str r " " f " " data
+            "->" (#+clj .getData #+cljs getData (sym this)))))
 
 
 (defn new-edge!
   [r f]
   (Edge. r f nil nil nil))
+
+
+
+(defn get-edge-record
+  [edge]
+  #+clj (.getEdgeRecord edge)
+  #+cljs (.etEdgeRecord edge))
 
 
 
@@ -66,13 +77,13 @@
   [edge]
   (let [r (+ (.-r edge) 3)
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) r f)))
+    (get-node (get-edge-record edge) r f)))
 
 (defn dest-vertex
   [edge]
   (let [r (+ (.-r edge) 1)
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) r f)))
+    (get-node (get-edge-record edge) r f)))
 
 ;; ## Orientation: left-face and right-face
 
@@ -80,13 +91,13 @@
   [edge]
   (let [r (+ (+ (.-r edge) 2) (* 2 (.-f edge)))
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) r f)))
+    (get-node (get-edge-record edge) r f)))
 
 (defn right-face
   [edge]
   (let [r (+ (.-r edge) (* 2 (.-f edge)))
         f (.-f edge)]
-    (get-node (.getEdgeRecord edge) r f)))
+    (get-node (get-edge-record edge) r f)))
 
 
 ;; get the three related edges within the same edge-record: rot, sym, and flip
@@ -96,7 +107,7 @@
   ([exponent edge]
    (let [r (+ (.-r edge) (* (+ 1 (* 2 (.-f edge))) exponent))
          f (.-f edge)]
-     (get-edge (.getEdgeRecord edge) r f))))
+     (get-edge (get-edge-record edge) r f))))
 
 (defn sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
@@ -104,7 +115,7 @@
   ([exponent edge]
    (let [r (+ (.-r edge) (* 2 exponent))
          f (.-f edge)]
-     (get-edge (.getEdgeRecord edge) r f))))
+     (get-edge (get-edge-record edge) r f))))
 
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
@@ -112,7 +123,7 @@
   ([exponent edge]
    (let [r (.-r edge)
          f (+ (.-f edge) exponent)]
-     (get-edge (.getEdgeRecord edge) r f))))
+     (get-edge (get-edge-record edge) r f))))
 
 
 ;; get connected edges: oPrev. oNext, dPrev, dNext, lPrev, lNext, rPrev, rNext
@@ -125,7 +136,7 @@
 
 ;; find the QuadEdge immediately following this one
 ;; counterclockwise in the ring of edges out of originVertex:
-(defn ^:private onext [edge] (.getNext edge))
+(defn ^:private onext [edge] (#+clj .getNext #+cljs getNext edge))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:
@@ -204,5 +215,6 @@
 (defn r-prev
   ([edge] (r-prev 1 edge))
   ([exponent edge] (neighbor edge rprev exponent)))
+
 
 

@@ -6,7 +6,7 @@
    [edge-algebra.core :as core :refer [splice!]]
    ;;
    ;; some functions for navigating to related edges:
-   [edge-algebra.edge :refer [sym o-next o-prev l-next r-prev]]
+   [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
    ;;
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core.vector :refer [vec2]]
@@ -23,11 +23,11 @@
 ;; will contain the coordinates of its origin:
 (defn org
   [edge]
-  (.getData edge))
+  (#+clj .getData #+cljs e/getData edge))
 
 (defn set-org!
   [edge coords]
-  (.setData edge coords))
+  (#+clj .setData #+cljs e/setData edge coords))
 
 ;; and similarly, the data field of its symmetric Edge
 ;; will contain the coordinates of its destination:
