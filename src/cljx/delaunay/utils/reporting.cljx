@@ -3,17 +3,29 @@
   #+cljs (:require [cljs.core.async :refer [put!]]))
 
 
+#+clj
 (defn get-fn-init-sym
   "Return the symbol that was used to define the function."
   [f]
   (-> (str f)
-      (#+clj clojure.string/replace #+cljs .replace #".*\$" "")
-      (#+clj clojure.string/replace #+cljs .replace #"\@.*$" "")
-      (#+clj clojure.string/replace #+cljs .replace "_BANG_" "!")
-      (#+clj clojure.string/replace #+cljs .replace "_QMARK_" "?")
-      (#+clj clojure.string/replace #+cljs .replace \_ \-)
-      symbol
-      ))
+      (clojure.string/replace #".*\$" "")
+      (clojure.string/replace #"\@.*$" "")
+      (clojure.string/replace "_BANG_" "!")
+      (clojure.string/replace "_QMARK_" "?")
+      (clojure.string/replace \_ \-)
+      symbol))
+
+#+cljs
+(defn get-fn-init-sym
+  [f]
+  (-> (str f)
+      (.replace #"^function " "")
+      (.replace (js/RegExp. "\n" "gm"), "")
+      (.replace #"\(.*" "")
+      (.replace "_BANG_" "!")
+      (.replace "_QMARK_" "?")
+      (.replace \_ \-)
+      symbol))
 
 
 (defn wrap-with-name-and-args-reporting
