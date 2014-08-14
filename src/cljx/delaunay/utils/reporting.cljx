@@ -6,13 +6,14 @@
 (defn get-fn-init-sym
   "Return the symbol that was used to define the function."
   [f]
-  (let [trim (fn [s] (re-find #"(?<=\$).*(?=@)" s))]
-    (-> (str f)
-        trim
-        (clojure.string/replace "_BANG_" "!")
-        (clojure.string/replace "_QMARK_" "?")
-        (clojure.string/replace \_ \-)
-        symbol)))
+  (-> (str f)
+      (#+clj clojure.string/replace #+cljs .replace #".*\$" "")
+      (#+clj clojure.string/replace #+cljs .replace #"\@.*$" "")
+      (#+clj clojure.string/replace #+cljs .replace "_BANG_" "!")
+      (#+clj clojure.string/replace #+cljs .replace "_QMARK_" "?")
+      (#+clj clojure.string/replace #+cljs .replace \_ \-)
+      symbol
+      ))
 
 
 (defn wrap-with-name-and-args-reporting
