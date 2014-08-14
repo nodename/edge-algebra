@@ -37,7 +37,7 @@
 
 (defn set-dest!
   [edge coords]
-  (.setData (sym edge) coords)
+  (#+clj .setData #+cljs e/setData (sym edge) coords)
   ;; previous line returns (sym edge) ha ha, so:
   edge)
 
