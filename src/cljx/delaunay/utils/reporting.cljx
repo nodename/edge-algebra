@@ -15,17 +15,19 @@
       (clojure.string/replace \_ \-)
       symbol))
 
+;; In ClojureScript (str f) gives the entire source code of the function,
+;; and we're not going to be able to use the symbol, so make it a keyword:
 #+cljs
 (defn get-fn-init-sym
   [f]
   (-> (str f)
+      (.replace (js/RegExp. "\n" "gm"), "") ;; remove all newlines
       (.replace #"^function " "")
-      (.replace (js/RegExp. "\n" "gm"), "")
-      (.replace #"\(.*" "")
+      (.replace #"\(.*" "") ;; remove open-paren and everything after it
       (.replace "_BANG_" "!")
       (.replace "_QMARK_" "?")
       (.replace \_ \-)
-      symbol))
+      keyword))
 
 
 (defn wrap-with-name-and-args-reporting
