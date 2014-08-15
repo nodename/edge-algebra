@@ -10,6 +10,11 @@
   (setData [this d]))
 
 
+(defn get-edge-record
+  [edge]
+  #+clj (.getEdgeRecord edge)
+  #+cljs (getEdgeRecord edge))
+
 (declare sym)
 
 (deftype Edge [r ; rotation
@@ -19,13 +24,16 @@
                #+clj ^:volatile-mutable next #+cljs ^:mutable next
                ]
   IEdge
+  ;; The "next" field will contain not a pointer to an edge but
+  ;; the indices needed to look up that edge:
   (getNext [this]
-           next)
+           (get-edge (:edge-record next) (:r next) (:f next)))
 
   (setNext [this e]
-           #+clj (set! next e)
-           #+cljs (aset this "next" e)
-           this)
+           (let [[r f edge-record] [(.-r e) (.-f e) (get-edge-record e)]]
+             #+clj (set! next {:r r :f f :edge-record edge-record})
+             #+cljs (aset this "next" {:r r :f f :edge-record edge-record})
+             this))
 
   (getEdgeRecord [this]
                  edge-record)
@@ -60,11 +68,6 @@
   (Edge. r f nil nil nil))
 
 
-
-(defn get-edge-record
-  [edge]
-  #+clj (.getEdgeRecord edge)
-  #+cljs (getEdgeRecord edge))
 
 
 
