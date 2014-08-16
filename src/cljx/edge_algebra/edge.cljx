@@ -1,64 +1,6 @@
 (ns edge-algebra.edge
   (:require [edge-algebra.record :refer [get-node get-edge get-edge-record]]))
 
-(defprotocol IEdge
-  (getNext [this])
-  (setNext [this e])
-  (getEdgeRecord [this])
-  (setEdgeRecord [this er])
-  (getData [this])
-  (setData [this d]))
-
-
-#_
-(declare sym)
-
-#_
-(deftype Edge [r ; rotation
-               f ; flip or orientation
-               #+clj ^:volatile-mutable data #+cljs ^:mutable data
-               #+clj ^:volatile-mutable edge-record #+cljs ^:mutable edge-record
-               #+clj ^:volatile-mutable next #+cljs ^:mutable next
-               ]
-  IEdge
-  ;; The "next" field will contain not a pointer to an edge but
-  ;; the indices needed to look up that edge:
-  (getNext [this]
-           (get-edge (:edge-record next) (:r next) (:f next)))
-
-  (setNext [this e]
-           (let [[r f edge-record] [(.-r e) (.-f e) (get-edge-record e)]]
-             #+clj (set! next {:r r :f f :edge-record edge-record})
-             #+cljs (aset this "next" {:r r :f f :edge-record edge-record})
-             this))
-
-  (getEdgeRecord [this]
-                 edge-record)
-
-  (setEdgeRecord [this er]
-                 #+clj (set! edge-record er)
-                 #+cljs (aset this "edge_record" er) ;; underscore? pwetty twicky!
-                 this)
-
-  (getData [this]
-           data)
-
-  (setData [this d]
-           #+clj (set! data d)
-           #+cljs (aset this "data" d)
-           this)
-
-  IType
-  (getType [this]
-            :edge)
-
-  Object
-  ;; This one is a bit smelly because it implies knowledge
-  ;; of what an application might store in the data fields:
-  (toString [this]
-            (str r " " f " " data
-            "->" #+clj (.getData (sym this) #+cljs (.-data (sym this))))))
-
 
 (defn new-edge!
   [r f edge-record-index next]

@@ -3,7 +3,7 @@
    ;; the two topological operations exported by the edge-algebra library
    ;; are make-edge! and splice!:
    [edge-algebra.core :refer [make-edge! splice!]]
-   [edge-algebra.record :refer [set-data!]]
+   [edge-algebra.record :refer [set-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -65,9 +65,10 @@
 
 (defn delete-edge!
   [e]
-  (println "DELETING " (verts e))
+  (println "DELETING " (:edge-record e))
   (splice! e (o-prev e))
-  (splice! (sym e) (o-prev (sym e))))
+  (splice! (sym e) (o-prev (sym e)))
+  (remove-edge-record! e))
 
 
 ;; In addition to the two topological operations,
@@ -82,7 +83,6 @@
                          (.-x b) (.-y b) (#+clj .mag-squared #+cljs g/mag-squared b) 1
                          (.-x c) (.-y c) (#+clj .mag-squared #+cljs g/mag-squared c) 1
                          (.-x d) (.-y d) (#+clj .mag-squared #+cljs g/mag-squared d) 1)]
-   ; (println (delaunay.utils.reporting/get-fn-init-sym (.-determinant matrix)))
 
     (> #+clj (.determinant matrix)
        #+cljs (.call thi.ng.geom.core.matrix.Matrix44.prototype.thi$ng$geom$core$PDeterminant$determinant$arity$1 matrix)
@@ -139,12 +139,13 @@
    and delete any l edges coming out of (dest cross-edge) that fail the circle test.
    Return the left candidate edge."
   [cross-edge]
-  (println)
+ ; (println)
   (let [initial-edge (o-prev (sym cross-edge))] ;; wrongly o-next in the paper!
+   ; (println "bubble-left: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
-      (do (println "bubble-left: dest is above cross-edge")
+      (do ; (println "bubble-left: dest is above cross-edge")
       (loop [edge initial-edge]
-        (println "bubble-left: " (verts edge))
+       ; (println "bubble-left: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-next edge)))
           (recur (slide-left! edge))
@@ -154,13 +155,13 @@
 (defn bubble-right!
   "Symmetrically to bubble-left!, return the right candidate edge."
   [cross-edge]
-  (println)
+;  (println)
   (let [initial-edge (o-prev cross-edge)]
-    (println "bubble-right: " (verts initial-edge))
+  ;  (println "bubble-right: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
-      (do (println "bubble-right: dest is above cross-edge")
+      (do ; (println "bubble-right: dest is above cross-edge")
       (loop [edge initial-edge]
-        (println "bubble-right: " (verts edge))
+       ; (println "bubble-right: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-prev edge)))
           (recur (slide-right! edge))
@@ -218,17 +219,17 @@
           ;; This is the merge loop:
           ;;
           (loop [cross-edge initial-cross-edge]
-            (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
+          ;  (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
             (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
-                  _ (println)
-                  _ (println "candidates: l: " (verts l-candidate)
-                             " r: " (verts r-candidate))
+                ;  _ (println)
+                ;  _ (println "candidates: l: " (verts l-candidate)
+                ;             " r: " (verts r-candidate))
                   ;;
                   dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
 
-              (println "l-cand above? " (dest-above-cross-edge? l-candidate))
-              (println "r-cand above? " (dest-above-cross-edge? r-candidate))
+          ;    (println "l-cand above? " (dest-above-cross-edge? l-candidate))
+          ;    (println "r-cand above? " (dest-above-cross-edge? r-candidate))
               ;;
               ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
               ;; then cross-edge is the upper common tangent and we're done.

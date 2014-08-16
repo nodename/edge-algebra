@@ -1,5 +1,5 @@
 (ns edge-algebra.dual
-  (:require [edge-algebra.record :refer [get-e0]]
+  (:require [edge-algebra.record :refer [get-edge-record get-e0]]
             [edge-algebra.edge :refer [rot flip
                                        origin-vertex dest-vertex
                                        left-face right-face]]))
@@ -13,9 +13,9 @@
                  ])
 
 (defn node-role
-  "The role of node with respect to edge"
+  "The role of node with respect to edge."
   [node edge]
-  (let [role-index (mod (- (.-r node) (:r edge)) 4)]
+  (let [role-index (mod (- (:r node) (:r edge)) 4)]
     (node-roles role-index)))
 
 
@@ -36,17 +36,17 @@
 
 (defmethod dual :node
   [node]
-  (let [e0 (get-e0 (.getEdgeRecord node))
+  (let [e0 (get-e0 (get-edge-record node))
         node-relationship-to-e0 (node-role node e0)
         dual-edge (dual e0)
         dual-node-relationship-to-dual-edge (condp = node-relationship-to-e0
-                                              :right-face (if (zero? (.-f node))
+                                              :right-face (if (zero? (:f node))
                                                             dest-vertex
                                                             origin-vertex)
 
                                               :dest-vertex right-face
 
-                                              :left-face (if (zero? (.-f node))
+                                              :left-face (if (zero? (:f node))
                                                           origin-vertex
                                                           dest-vertex)
 
