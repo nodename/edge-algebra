@@ -15,13 +15,19 @@
 (defn node-role
   "The role of node with respect to edge"
   [node edge]
-  (let [role-index (mod (- (.-r node) (.-r edge)) 4)]
+  (let [role-index (mod (- (.-r node) (:r edge)) 4)]
     (node-roles role-index)))
 
 
+(defn which
+  [node-or-edge]
+  (if (nil? (:next node-or-edge))
+    :node
+    :edge))
+
 (defmulti dual
   "The dual of an Edge or a Node is its counterpart in the dual subdivision."
-  #(.getType %))
+  which)
 
 
 (defmethod dual :edge

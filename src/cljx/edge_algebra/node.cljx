@@ -1,5 +1,5 @@
 (ns edge-algebra.node
-  (:require [edge-algebra.record :refer [IType]]))
+  (:require [edge-algebra.record :refer [get-edge-record]]))
 
 ;; A Node represents either a vertex or a face of the graph
 
@@ -16,16 +16,12 @@
                ]
   INode
   (getEdgeRecord [this]
-    edge-record)
+    (get-edge-record {:edge-record edge-record}))
 
   (setEdgeRecord [this er]
     #+clj (set! edge-record er)
     #+cljs (aset this "edge-record" er)
-    this)
-
-  IType
-  (getType [this]
-            :node))
+    this))
 
 
 (defn new-node!

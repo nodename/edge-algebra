@@ -1,5 +1,5 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.record :refer [IType get-node get-edge]]))
+  (:require [edge-algebra.record :refer [get-node get-edge get-edge-record]]))
 
 (defprotocol IEdge
   (getNext [this])
@@ -10,13 +10,10 @@
   (setData [this d]))
 
 
-(defn get-edge-record
-  [edge]
-  #+clj (.getEdgeRecord edge)
-  #+cljs (getEdgeRecord edge))
-
+#_
 (declare sym)
 
+#_
 (deftype Edge [r ; rotation
                f ; flip or orientation
                #+clj ^:volatile-mutable data #+cljs ^:mutable data
@@ -64,10 +61,12 @@
 
 
 (defn new-edge!
-  [r f]
-  (Edge. r f nil nil nil))
-
-
+  [r f edge-record-index next]
+  {:r r
+   :f f
+   :data nil
+   :edge-record edge-record-index
+   :next next})
 
 
 
@@ -78,28 +77,28 @@
 
 (defn origin-vertex
   [edge]
-  (let [r (+ (.-r edge) 3)
-        f (.-f edge)]
+  (let [r (+ (:r edge) 3)
+        f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
 (defn dest-vertex
   [edge]
-  (let [r (+ (.-r edge) 1)
-        f (.-f edge)]
+  (let [r (+ (:r edge) 1)
+        f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
 ;; ## Orientation: left-face and right-face
 
 (defn left-face
   [edge]
-  (let [r (+ (+ (.-r edge) 2) (* 2 (.-f edge)))
-        f (.-f edge)]
+  (let [r (+ (+ (:r edge) 2) (* 2 (:f edge)))
+        f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
 (defn right-face
   [edge]
-  (let [r (+ (.-r edge) (* 2 (.-f edge)))
-        f (.-f edge)]
+  (let [r (+ (:r edge) (* 2 (:f edge)))
+        f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
 
@@ -108,24 +107,26 @@
 (defn rot
   ([edge] (rot 1 edge))
   ([exponent edge]
-   (let [r (+ (.-r edge) (* (+ 1 (* 2 (.-f edge))) exponent))
-         f (.-f edge)]
+   (let [r (+ (:r edge) (* (+ 1 (* 2 (:f edge))) exponent))
+         f (:f edge)]
      (get-edge (get-edge-record edge) r f))))
 
 (defn sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
   ([edge] (sym 1 edge))
   ([exponent edge]
-   (let [r (+ (.-r edge) (* 2 exponent))
-         f (.-f edge)]
+  ; (println "SYM: input r f: " (:r edge) " " (:f edge))
+   (let [r (+ (:r edge) (* 2 exponent))
+         f (:f edge)]
+   ;  (println "SYM: new r f: " r " " f)
      (get-edge (get-edge-record edge) r f))))
 
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
   ([edge] (flip 1 edge))
   ([exponent edge]
-   (let [r (.-r edge)
-         f (+ (.-f edge) exponent)]
+   (let [r (:r edge)
+         f (+ (:f edge) exponent)]
      (get-edge (get-edge-record edge) r f))))
 
 
@@ -139,7 +140,9 @@
 
 ;; find the QuadEdge immediately following this one
 ;; counterclockwise in the ring of edges out of originVertex:
-(defn ^:private onext [edge] (#+clj .getNext #+cljs getNext edge))
+(defn ^:private onext [edge]
+  (get-edge (get-edge-record (:next edge))
+                                       (:r (:next edge)) (:f (:next edge))))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:

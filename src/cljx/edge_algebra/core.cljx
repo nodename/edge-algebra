@@ -15,7 +15,7 @@
 ;;
 (ns edge-algebra.core
   (:require [edge-algebra.edge-record :refer [new-edge-record!]]
-            [edge-algebra.record :refer [get-e0]]
+            [edge-algebra.record :refer [get-e0 set-next!]]
             [edge-algebra.edge :as e :refer [o-next rot]]))
 
 ;; ## The Two Operators Exported by the Library
@@ -37,10 +37,10 @@
         beta (rot edge1-next)
         alpha-next (o-next alpha)
         beta-next (o-next beta)]
-    (#+clj .setNext #+cljs e/setNext edge0 edge1-next)
-    (#+clj .setNext #+cljs e/setNext edge1 edge0-next)
-    (#+clj .setNext #+cljs e/setNext alpha beta-next)
-    (#+clj .setNext #+cljs e/setNext beta alpha-next)))
+    (set-next! edge0 edge1-next)
+    (set-next! edge1 edge0-next)
+    (set-next! alpha beta-next)
+    (set-next! beta alpha-next)))
 
 
 

@@ -1,9 +1,9 @@
 (ns delaunay.div-conq
   (:require
    ;; the two topological operations exported by the edge-algebra library
-   ;; are make-edge!, which we use to define our own make-edge! (see below),
-   ;; and splice!:
-   [edge-algebra.core :as core :refer [splice!]]
+   ;; are make-edge! and splice!:
+   [edge-algebra.core :refer [make-edge! splice!]]
+   [edge-algebra.record :refer [set-data!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -24,11 +24,11 @@
 ;; will contain the coordinates of its origin:
 (defn org
   [edge]
-  (#+clj .getData #+cljs e/getData edge))
+  (:data edge))
 
 (defn set-org!
   [edge coords]
-  (#+clj .setData #+cljs e/setData edge coords))
+  (set-data! edge coords))
 
 ;; and similarly, the data field of its symmetric Edge
 ;; will contain the coordinates of its destination:
@@ -38,28 +38,34 @@
 
 (defn set-dest!
   [edge coords]
-  (#+clj .setData #+cljs e/setData (sym edge) coords)
+  (set-data! (sym edge) coords)
   ;; previous line returns (sym edge) ha ha, so:
   edge)
 
 
+(defn verts
+  [edge]
+  (str (org edge) "->" (dest edge)))
 
-(defn make-edge!
+
+
+(defn make-d-edge!
   [org dest]
-  (-> (core/make-edge!)
+  (-> (make-edge!)
     (set-org! org)
     (set-dest! dest)))
 
 
 (defn connect!
   [a b]
-  (let [e (make-edge! (dest a) (org b))]
+  (let [e (make-d-edge! (dest a) (org b))]
     (splice! e (l-next a))
     (splice! (sym e) b)
     e))
 
 (defn delete-edge!
   [e]
+  (println "DELETING " (verts e))
   (splice! e (o-prev e))
   (splice! (sym e) (o-prev (sym e))))
 
@@ -133,25 +139,32 @@
    and delete any l edges coming out of (dest cross-edge) that fail the circle test.
    Return the left candidate edge."
   [cross-edge]
+  (println)
   (let [initial-edge (o-prev (sym cross-edge))] ;; wrongly o-next in the paper!
     (if (dest-above? initial-edge cross-edge)
+      (do (println "bubble-left: dest is above cross-edge")
       (loop [edge initial-edge]
+        (println "bubble-left: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-next edge)))
           (recur (slide-left! edge))
-          edge))
+          edge)))
       initial-edge)))
 
 (defn bubble-right!
   "Symmetrically to bubble-left!, return the right candidate edge."
   [cross-edge]
+  (println)
   (let [initial-edge (o-prev cross-edge)]
+    (println "bubble-right: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
+      (do (println "bubble-right: dest is above cross-edge")
       (loop [edge initial-edge]
+        (println "bubble-right: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-prev edge)))
           (recur (slide-right! edge))
-          edge))
+          edge)))
       initial-edge)))
 
 (defn delaunay
@@ -163,12 +176,12 @@
     (condp = (count sites)
       1 nil
 
-      2 (let [a (make-edge! (sites 0) (sites 1))]
+      2 (let [a (make-d-edge! (sites 0) (sites 1))]
           [a (sym a)])
 
       3 (let [[s1 s2 s3] (sort-xy sites)
-              a (make-edge! s1 s2)
-              b (make-edge! s2 s3)]
+              a (make-d-edge! s1 s2)
+              b (make-d-edge! s2 s3)]
           (splice! (sym a) b)
           ;; Now close the triangle:
           (cond
@@ -205,10 +218,17 @@
           ;; This is the merge loop:
           ;;
           (loop [cross-edge initial-cross-edge]
+            (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
             (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
+                  _ (println)
+                  _ (println "candidates: l: " (verts l-candidate)
+                             " r: " (verts r-candidate))
                   ;;
                   dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
+
+              (println "l-cand above? " (dest-above-cross-edge? l-candidate))
+              (println "r-cand above? " (dest-above-cross-edge? r-candidate))
               ;;
               ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
               ;; then cross-edge is the upper common tangent and we're done.
@@ -233,7 +253,7 @@
 
 (defn with-reporting
   [ch f & [args]]
-  (with-redefs [make-edge! (wrap-with-name-and-args-reporting ch make-edge!)
+  (with-redefs [make-d-edge! (wrap-with-name-and-args-reporting ch make-d-edge!)
                 delete-edge! (wrap-with-name-and-args-reporting ch delete-edge!)
                 in-circle? (wrap-with-name-and-args-reporting ch in-circle?)]
     (f args)))
