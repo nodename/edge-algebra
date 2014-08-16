@@ -133,7 +133,7 @@
    and delete any l edges coming out of (dest cross-edge) that fail the circle test.
    Return the left candidate edge."
   [cross-edge]
-  (let [initial-edge (o-next (sym cross-edge))]
+  (let [initial-edge (o-prev (sym cross-edge))] ;; wrongly o-next in the paper!
     (if (dest-above? initial-edge cross-edge)
       (loop [edge initial-edge]
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
