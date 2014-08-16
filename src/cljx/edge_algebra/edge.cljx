@@ -1,5 +1,6 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.record :refer [get-node get-edge get-edge-record]]))
+  (:require [edge-algebra.record :refer [get-node get-edge]]
+            [edge-algebra.app-state :refer [get-edge-record]]))
 
 
 (defn new-edge!

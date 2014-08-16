@@ -3,7 +3,7 @@
    ;; the two topological operations exported by the edge-algebra library
    ;; are make-edge! and splice!:
    [edge-algebra.core :refer [make-edge! splice!]]
-   [edge-algebra.record :refer [set-data! remove-edge-record!]]
+   [edge-algebra.app-state :refer [set-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]

@@ -15,7 +15,8 @@
 ;;
 (ns edge-algebra.core
   (:require [edge-algebra.edge-record :refer [new-edge-record!]]
-            [edge-algebra.record :refer [get-e0 set-next!]]
+            [edge-algebra.record :refer [get-e0]]
+            [edge-algebra.app-state :refer [set-next!]]
             [edge-algebra.edge :refer [o-next rot]]))
 
 ;; ## The Two Operators Exported by the Library

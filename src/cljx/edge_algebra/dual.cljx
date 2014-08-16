@@ -1,5 +1,6 @@
 (ns edge-algebra.dual
-  (:require [edge-algebra.record :refer [get-edge-record get-e0]]
+  (:require [edge-algebra.record :refer [get-e0]]
+            [edge-algebra.app-state :refer [get-edge-record]]
             [edge-algebra.edge :refer [rot flip
                                        origin-vertex dest-vertex
                                        left-face right-face]]))
