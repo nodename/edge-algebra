@@ -1,4 +1,4 @@
-(ns view.timemachine
+(ns view.time-machine
 	(:require [edge-algebra.app-state :refer [edge-records]]))
 
 ;; Copied from goya.

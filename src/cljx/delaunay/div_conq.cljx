@@ -1,8 +1,10 @@
 (ns delaunay.div-conq
   (:require
-   ;; the two topological operations exported by the edge-algebra library
-   ;; are make-edge! and splice!:
+   ;;
+   ;; the two topological operators exported by the edge-algebra library:
    [edge-algebra.core :refer [make-edge! splice!]]
+   ;;
+   ;; two application-specific mutators:
    [edge-algebra.app-state :refer [set-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
@@ -14,7 +16,9 @@
    [thi.ng.geom.core.matrix :refer [matrix44]]
    [thi.ng.geom.core.utils :refer [norm-sign2]]
    ;;
+   ;; console logging:
    [delaunay.utils.reporting :refer [wrap-with-name-and-args-reporting]]))
+
 
 ;; An alias for the 2-D point constructor:
 (def pt vec2)

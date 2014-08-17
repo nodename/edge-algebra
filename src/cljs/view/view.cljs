@@ -1,7 +1,8 @@
 (ns view.view
-  (:require [thi.ng.geom.core.vector :refer [vec2]]
-            [cljs.core.async :refer [>! <! chan]]
-            [delaunay.div-conq :refer [pt org dest delaunay with-reporting]]
+  (:require [cljs.core.async :refer [>! <! chan]]
+            [thi.ng.geom.core.vector :refer [vec2]]
+            [edge-algebra.record :refer [get-e0 get-edge]]
+            [delaunay.div-conq :refer [pt delaunay with-reporting]]
             [delaunay.utils.circle :refer [center-and-radius]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
@@ -31,13 +32,13 @@
 
 (defn init-canvas
   "Initialize a canvas and return it."
-  [z-index]
+  [parent z-index]
   (let [canvas (.createElement js/document "canvas")]
     (.setAttribute canvas "width" (.-innerWidth js/window))
     (.setAttribute canvas "height" (.-innerHeight js/window))
     (.setAttribute canvas "style" (str "z-index:" z-index
                                        "; position:absolute; left:0px; top:0px;"))
-    (.appendChild (.-body js/document) canvas)))
+    (.appendChild parent canvas)))
 
 (defn stop-animation
   [request-id]
@@ -76,15 +77,16 @@
                               {:r r :b b :g g :a (alpha elapsed-time)}))]
         (start-animation update stop?)))
 
-(defn render-lines
-  [canvas lines]
-  (let [context (.getContext canvas "2d")
-        line-width 2
+(defn render-edges
+  [context edge-records]
+  (let [line-width 2
         scale 200
         line-color {:r 255 :g 0 :b 0}]
-    (.clearRect context 0 0 (.-width canvas) (.-height canvas))
-    (doseq [l lines]
-      (draw-line context (l 0) (l 1) line-width scale line-color))))
+    (.clearRect context 0 0 (.-width (.-canvas context)) (.-height (.-canvas context)))
+    (doseq [edge-record edge-records]
+      (let [p0 (:data (get-e0 edge-record))
+            p1 (:data (get-edge edge-record 2 0))]
+        (draw-line context p0 p1 line-width scale line-color)))))
 
 (defn render
   [canvas center radius]
@@ -110,11 +112,12 @@
 
 (defn main
   []
-  (let [canvas1 (init-canvas 1)
-        canvas2 (init-canvas 2)
-        circle-canvas (init-canvas 3)
+  (let [canvas1 (init-canvas (.-body js/document) 1)
+        canvas2 (init-canvas (.-body js/document) 2)
+        circle-canvas (init-canvas (.-body js/document) 3)
         app-state (atom [])]
-    (add-watch app-state :renderer (fn [_ _ _ lines] (render-lines canvas1 lines)))
+    (add-watch app-state :renderer (fn [_ _ _ lines]
+                                     (render-edges (.getContext canvas1 "2d") lines)))
     (let [ch (drawer app-state circle-canvas)
         a (pt 0 0)
         b (pt 0 1)

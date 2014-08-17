@@ -9,7 +9,6 @@
 #+cljs
 (defn set-cursor!
   [c]
-  (println "Setting cursor to " c)
   (reset! cursor c))
 
 (defn next-er-index
