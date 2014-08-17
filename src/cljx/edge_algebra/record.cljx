@@ -5,6 +5,7 @@
 
 ;; Edge-record accessor functions:
 
+
 (defn- get-elt
   [edge-record type r f]
   (get-in edge-record [type (mod r 4) (mod f 2)]))

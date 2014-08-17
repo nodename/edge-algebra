@@ -10,22 +10,24 @@
 (defn draw-line
   [context p0 p1 line-width scale {:keys [r g b a]
                                      :or {a 1.0}}]
-  (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
-  (set! (. context -lineWidth) line-width)
-  (.beginPath context)
-  (.moveTo context (* scale (.-x p0)) (* scale (.-y p0)))
-  (.lineTo context (* scale (.-x p1)) (* scale (.-y p1)))
-  (.stroke context))
+  (let [h (.-height (.-canvas context))]
+    (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
+    (set! (. context -lineWidth) line-width)
+    (.beginPath context)
+    (.moveTo context (* scale (.-x p0)) (- h (* scale (.-y p0))))
+    (.lineTo context (* scale (.-x p1)) (- h (* scale (.-y p1))))
+    (.stroke context)))
 
 (defn draw-circle
   [context center radius line-width scale {:keys [r g b a]
                                      :or {a 1.0}}]
-  (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
-  (set! (. context -lineWidth) line-width)
-  (.beginPath context)
-  ;; x y radius startAngle endAngle counterClockwise?:
-  (.arc context (* scale (.-x center)) (* scale (.-y center)) (* scale radius) 0 (* 2 Math/PI) false)
-  (.stroke context))
+  (let [h (.-height (.-canvas context))]
+    (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
+    (set! (. context -lineWidth) line-width)
+    (.beginPath context)
+    ;; x y radius startAngle endAngle counterClockwise?:
+    (.arc context (* scale (.-x center)) (- h (* scale (.-y center))) (* scale radius) 0 (* 2 Math/PI) false)
+    (.stroke context)))
 
 (defn init-canvas
   "Initialize a canvas and return it."
@@ -68,7 +70,7 @@
                  (let [square-width (+ radius radius line-width)]
                    (.clearRect context
                                (* scale (- (.-x center) (/ square-width 2)))
-                               (* scale (- (.-y center) (/ square-width 2)))
+                               (* scale (- (.-y center) (/ square-width 2))) ;; FIX
                                (* scale square-width) (* scale square-width)))
                  (draw-circle context center radius line-width scale
                               {:r r :b b :g g :a (alpha elapsed-time)}))]
@@ -90,14 +92,6 @@
     (.clearRect context 0 0 (.-width canvas) (.-height canvas))
     (draw-fading-circle context center radius 2 1 {:r 255 :g 0 :b 0} 500)))
 
-(defn printer
-  [& [limit]]
-  (let [ch (chan 10)]
-    (go-loop [index 0]
-             (apply prn index (<! ch))
-             (when (or (nil? limit) (< index limit))
-               (recur (inc index))))
-    ch))
 
 (defn drawer
   [app-state circle-canvas & [limit]]
@@ -105,7 +99,7 @@
     (go-loop [index 0]
              (let [[name & args] (<! ch)]
                (condp = name
-                 :make-edge! (swap! app-state conj (vec args))
+                 :make-d_edge! (swap! app-state conj (vec args)) ;; yes, a hyphen and then an underscore
                  :delete-edge! nil
                  :in-circle? (let [[center radius] (apply center-and-radius (butlast args))]
                               (render circle-canvas center radius))
@@ -129,6 +123,6 @@
         e (pt 3 1)
         f (pt 4 0)]
     (let [[l-edge r-edge] (with-reporting ch delaunay [a b c d e f])])
-    (render canvas2 (vec2 300 300) 50)
+   ; (render canvas2 (vec2 300 300) 50)
     )))
 

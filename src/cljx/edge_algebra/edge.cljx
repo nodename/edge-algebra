@@ -1,6 +1,6 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.record :refer [get-node get-edge]]
-            [edge-algebra.app-state :refer [get-edge-record]]))
+  (:require [edge-algebra.app-state :refer [ get-edge-record]]
+            [edge-algebra.record :refer [get-node get-edge]]))
 
 
 (defn new-edge!
@@ -10,7 +10,6 @@
    :data nil
    :edge-record edge-record-index
    :next next})
-
 
 
 ;; The four nodes directly connected to this edge
