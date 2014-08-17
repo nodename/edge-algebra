@@ -3,7 +3,7 @@
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [>! <! chan]]
             [delaunay.div-conq :refer [pt delaunay with-reporting]]
-            [edge-algebra.app-state :refer [set-cursor!]]
+            [edge-algebra.app-state :as app-state :refer [set-cursor!]]
             [view.view :refer [render-edges]]
             [view.time-machine :as time-machine])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
@@ -35,7 +35,7 @@
 
 
 (defn tx-listener [tx-data root-cursor]
-  (timemachine/handle-transaction tx-data root-cursor))
+  (time-machine/handle-transaction tx-data root-cursor))
 
 
 (defn edges-view
