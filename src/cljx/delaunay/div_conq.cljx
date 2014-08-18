@@ -5,7 +5,8 @@
    [edge-algebra.core :refer [make-edge! splice!]]
    ;;
    ;; application-specific mutators:
-   [edge-algebra.app-state :refer [set-data! remove-edge-record! add-marker-transaction!]]
+   [edge-algebra.app-state :refer [set-data! remove-edge-record!
+                                   #+cljs add-marker-transaction!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]

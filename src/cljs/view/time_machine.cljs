@@ -1,11 +1,11 @@
 (ns view.time-machine
-	(:require [edge-algebra.app-state :refer [edge-records]]))
+	(:require [edge-algebra.app-state :refer [app-state]]))
 
 ;; Copied from goya.
 ;; =============================================================================
 ;; Credits to David Nolen's Time Travel blog post.
 
-(def app-history (atom [@edge-records]))
+(def app-history (atom [@app-state]))
 (def app-future (atom []))
 (def preview-state (atom {}))
 
@@ -17,14 +17,14 @@
 ;; =============================================================================
 
 (defn update-preview []
-  (reset! preview-state @edge-records))
+  (reset! preview-state @app-state))
 
 
 (defn show-history-preview [idx]
   (reset! preview-state (nth @app-history idx)))
 
 
-(add-watch edge-records :preview-watcher
+(add-watch app-state :preview-watcher
   (fn [_ _ _ _] (update-preview)))
 
 
@@ -46,11 +46,11 @@
   (when (undo-is-possible)
     (swap! app-future conj (last @app-history))
     (swap! app-history pop)
-    (reset! edge-records (last @app-history))))
+    (reset! app-state (last @app-history))))
 
 (defn do-redo []
   (when (redo-is-possible)
-    (reset! edge-records (last @app-future))
+    (reset! app-state (last @app-future))
     (push-onto-undo-stack (last @app-future))
     (swap! app-future pop)))
 

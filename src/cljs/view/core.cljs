@@ -11,7 +11,7 @@
 
 (enable-console-print!)
 
-(reset! time-machine/preview-state @app-state/edge-records)
+(reset! time-machine/preview-state @app-state/app-state)
 
 
 (defn printer
@@ -51,7 +51,7 @@
      [this prev-props prev-state]
      (let [context (-> (. js/document (getElementById "delaunay-canvas"))
                        (.getContext "2d"))]
-       (render-edges context (.-value cursor))))
+       (render-edges context (:edge-records (.-value cursor)))))
 
     om/IRender
     (render
@@ -69,6 +69,6 @@
 
 (om/root
   edges-view
-  app-state/edge-records
+  app-state/app-state
   {:target (. js/document (getElementById "delaunay"))
    :tx-listen handle-transaction})
