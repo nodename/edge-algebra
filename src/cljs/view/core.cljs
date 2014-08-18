@@ -5,7 +5,8 @@
             [delaunay.div-conq :refer [pt delaunay with-reporting]]
             [edge-algebra.app-state :as app-state :refer [set-cursor!]]
             [view.view :refer [render-edges]]
-            [view.time-machine :as time-machine :refer [handle-transaction do-undo]])
+            [view.time-machine :as time-machine :refer [handle-transaction
+                                                        do-undo do-redo]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
 (enable-console-print!)
@@ -56,11 +57,14 @@
     (render
      [this]
      (dom/div #js {:style #js {:width "100%" :height "100%"}}
-      (dom/canvas #js {:id "delaunay-canvas"
-                        :width 800 :height 400})
-      (dom/button #js {:width "20%" :float "left"
-                       :onClick (fn [e] (do-undo))}
-                  "Undo")))))
+              (dom/canvas #js {:id "delaunay-canvas"
+                               :width 800 :height 400})
+              (dom/button #js {:width "20%" :float "left"
+                               :onClick (fn [e] (do-undo))}
+                          "Undo")
+              (dom/button #js {:width "20%" :float "left"
+                               :onClick (fn [e] (do-redo))}
+                          "Redo")))))
 
 
 (om/root
