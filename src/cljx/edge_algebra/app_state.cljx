@@ -26,7 +26,7 @@
 (defn add-marker-transaction!
   "Add a marker transaction for the current cursor state."
   []
-  (om/transact! @cursor [:edge-records] (constantly (:edge-records @app-state)) :add-to-undo))
+  (om/transact! @cursor [] (constantly @app-state) :add-to-undo))
 
 
 (defn add-edge-record!
@@ -34,13 +34,16 @@
   #+clj (swap! app-state update-in [:edge-records] conj er)
   #+cljs (om/transact! @cursor [:edge-records] #(conj % er)))
 
+
 (defn remove-edge-record!
   "Mark edge's edge record as deleted. We don't really delete it
-  because edge records are referred to by their indices in @edge-records."
+  because edge records are referred to by their indices in :edge-records."
   [edge]
   (let [er-index (:edge-record edge)]
     #+clj (swap! app-state assoc-in [:edge-records er-index :deleted] true)
-    #+cljs (om/transact! @cursor [:edge-records er-index :deleted] (constantly true) :add-to-undo)))
+    #+cljs (om/transact! @cursor [:edge-records er-index :deleted]
+                         (constantly true)
+                         :add-to-undo)))
 
 
 (defn set-data!
@@ -50,7 +53,8 @@
         r (:r edge)
         f (:f edge)]
     #+clj (swap! app-state assoc-in [:edge-records er-index :edges r f :data] data)
-    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :data] (constantly data))
+    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :data]
+                         (constantly data))
     (get-in @app-state [:edge-records er-index :edges r f])))
 
 
@@ -64,5 +68,6 @@
               :f (:f next-edge)
               :edge-record (:edge-record next-edge)}]
     #+clj (swap! app-state assoc-in [:edge-records er-index :edges r f :next] next)
-    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :next] (constantly next))
+    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :next]
+                         (constantly next))
     (get-in @app-state [:edge-records er-index :edges r f])))
