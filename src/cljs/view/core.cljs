@@ -5,7 +5,7 @@
             [delaunay.div-conq :refer [pt delaunay with-reporting]]
             [edge-algebra.app-state :as app-state :refer [set-cursor!]]
             [view.view :refer [render-edges]]
-            [view.time-machine :as time-machine])
+            [view.time-machine :as time-machine :refer [handle-transaction do-undo]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
 (enable-console-print!)
@@ -25,17 +25,14 @@
 (defn run-delaunay
   []
   (let [ch (printer)
-           a (pt 0 0)
-           b (pt 0 1)
-           c (pt 1 0)
-           d (pt 2 0)
-           e (pt 3 1)
-           f (pt 4 0)]
-       (with-reporting ch delaunay [a b c d e f])))
+        a (pt 0 0)
+        b (pt 0 1)
+        c (pt 1 0)
+        d (pt 2 0)
+        e (pt 3 1)
+        f (pt 4 0)]
+    (with-reporting ch delaunay [a b c d e f])))
 
-
-(defn tx-listener [tx-data root-cursor]
-  (time-machine/handle-transaction tx-data root-cursor))
 
 
 (defn edges-view
@@ -58,12 +55,16 @@
     om/IRender
     (render
      [this]
-     (dom/canvas #js {:id "delaunay-canvas"
-                      :width 800 :height 400}))))
+     (dom/div #js {:style #js {:width "100%" :height "100%"}}
+      (dom/canvas #js {:id "delaunay-canvas"
+                        :width 800 :height 400})
+      (dom/button #js {:width "20%" :float "left"
+                       :onClick (fn [e] (do-undo))}
+                  "Undo")))))
 
 
 (om/root
   edges-view
   app-state/edge-records
   {:target (. js/document (getElementById "delaunay"))
-   :tx-listen tx-listener})
+   :tx-listen handle-transaction})

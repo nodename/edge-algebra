@@ -22,6 +22,13 @@
 
 ;; Mutators:
 
+#+cljs
+(defn add-marker-transaction!
+  "Add a marker transaction for the current cursor state."
+  []
+  (om/transact! @cursor [] (constantly @edge-records) :add-to-undo))
+
+
 (defn add-edge-record!
   [er]
   #+clj (swap! edge-records conj er)
@@ -33,7 +40,7 @@
   [edge]
   (let [er-index (:edge-record edge)]
     #+clj (swap! edge-records assoc-in [er-index :deleted] true)
-    #+cljs (om/transact! @cursor [er-index :deleted] (constantly true))))
+    #+cljs (om/transact! @cursor [er-index :deleted] (constantly true) :add-to-undo)))
 
 
 (defn set-data!

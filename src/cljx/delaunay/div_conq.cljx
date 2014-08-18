@@ -4,8 +4,8 @@
    ;; the two topological operators exported by the edge-algebra library:
    [edge-algebra.core :refer [make-edge! splice!]]
    ;;
-   ;; two application-specific mutators:
-   [edge-algebra.app-state :refer [set-data! remove-edge-record!]]
+   ;; application-specific mutators:
+   [edge-algebra.app-state :refer [set-data! remove-edge-record! add-marker-transaction!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -55,9 +55,11 @@
 
 (defn make-d-edge!
   [org dest]
-  (-> (make-edge!)
-    (set-org! org)
-    (set-dest! dest)))
+  (let [edge (-> (make-edge!)
+                 (set-org! org)
+                 (set-dest! dest))]
+    #+cljs (add-marker-transaction!)
+    edge))
 
 
 (defn connect!

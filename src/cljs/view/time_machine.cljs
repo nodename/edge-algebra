@@ -58,5 +58,5 @@
 (defn handle-transaction [tx-data root-cursor]
   (when (= (:tag tx-data) :add-to-undo)
     (reset! app-future [])
-    (let [new-state (get-in (:new-state tx-data) [:edge-records])]
+    (let [new-state (:new-state tx-data)]
       (push-onto-undo-stack new-state))))
