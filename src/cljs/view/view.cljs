@@ -84,9 +84,10 @@
         line-color {:r 255 :g 0 :b 0}]
     (.clearRect context 0 0 (.-width (.-canvas context)) (.-height (.-canvas context)))
     (doseq [edge-record edge-records]
-      (let [p0 (:data (get-e0 edge-record))
-            p1 (:data (get-edge edge-record 2 0))]
-        (draw-line context p0 p1 line-width scale line-color)))))
+      (when (not (:deleted edge-record))
+        (let [p0 (:data (get-e0 edge-record))
+              p1 (:data (get-edge edge-record 2 0))]
+          (draw-line context p0 p1 line-width scale line-color))))))
 
 (defn render
   [canvas center radius]
