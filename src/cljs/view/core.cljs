@@ -2,7 +2,7 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [>! <! chan]]
-            [delaunay.div-conq :refer [pt delaunay with-reporting]]
+            [delaunay.div-conq :refer [pt delaunay with-reporting with-undo]]
             [edge-algebra.app-state :as app-state :refer [set-cursor!]]
             [view.view :refer [render-edges]]
             [view.time-machine :as time-machine :refer [handle-transaction
@@ -32,7 +32,7 @@
         d (pt 2 0)
         e (pt 3 1)
         f (pt 4 0)]
-    (with-reporting ch delaunay [a b c d e f])))
+    (with-reporting ch (with-undo delaunay [a b c d e f])))) ;; ugh, they don't compose
 
 
 

@@ -23,10 +23,20 @@
 ;; Mutators:
 
 #+cljs
-(defn add-marker-transaction!
-  "Add a marker transaction for the current cursor state."
+(defn add-to-undo!
+  "Add a marker transaction to the undo list for the current cursor state."
   []
   (om/transact! @cursor [] (constantly @app-state) :add-to-undo))
+
+#+cljs
+(defn wrap-with-undo
+  "Return a function which will put the add the current app state to the undo list
+  after invoking f."
+  [f]
+  (fn [& args]
+    (let [val (apply f args)]
+      (add-to-undo!)
+      val)))
 
 
 (defn add-edge-record!
@@ -42,8 +52,7 @@
   (let [er-index (:edge-record edge)]
     #+clj (swap! app-state assoc-in [:edge-records er-index :deleted] true)
     #+cljs (om/transact! @cursor [:edge-records er-index :deleted]
-                         (constantly true)
-                         :add-to-undo)))
+                         (constantly true))))
 
 
 (defn set-data!

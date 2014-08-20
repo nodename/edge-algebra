@@ -6,7 +6,7 @@
    ;;
    ;; application-specific mutators:
    [edge-algebra.app-state :refer [set-data! remove-edge-record!
-                                   #+cljs add-marker-transaction!]]
+                                   #+cljs wrap-with-undo]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -56,11 +56,9 @@
 
 (defn make-d-edge!
   [org dest]
-  (let [edge (-> (make-edge!)
-                 (set-org! org)
-                 (set-dest! dest))]
-    #+cljs (add-marker-transaction!)
-    edge))
+  (-> (make-edge!)
+      (set-org! org)
+      (set-dest! dest)))
 
 
 (defn connect!
@@ -147,7 +145,10 @@
    Return the left candidate edge."
   [cross-edge]
  ; (println)
-  (let [initial-edge (o-prev (sym cross-edge))] ;; wrongly o-next in the paper!
+  ;; This o-prev is o-next in the paper; they are using the simplified edge-algebra
+  ;; for orientable manifolds. Since we are using the full version, (sym cross-edge) is
+  ;; oppositely oriented and we must use o-prev instead:
+  (let [initial-edge (o-prev (sym cross-edge))]
    ; (println "bubble-left: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
       (do ; (println "bubble-left: dest is above cross-edge")
@@ -264,4 +265,11 @@
   (with-redefs [make-d-edge! (wrap-with-name-and-args-reporting ch make-d-edge!)
                 delete-edge! (wrap-with-name-and-args-reporting ch delete-edge!)
                 in-circle? (wrap-with-name-and-args-reporting ch in-circle?)]
+    (f args)))
+
+#+cljs
+(defn with-undo
+  [f & [args]]
+  (with-redefs [make-d-edge! (wrap-with-undo make-d-edge!)
+                delete-edge! (wrap-with-undo delete-edge!)]
     (f args)))
