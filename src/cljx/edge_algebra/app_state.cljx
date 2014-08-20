@@ -30,7 +30,7 @@
 
 #+cljs
 (defn wrap-with-undo
-  "Return a function which will put the add the current app state to the undo list
+  "Return a function which will add the current app state to the undo list
   after invoking f."
   [f]
   (fn [& args]
@@ -45,14 +45,19 @@
   #+cljs (om/transact! @cursor [:edge-records] #(conj % er)))
 
 
+(defn update!
+  [path value]
+  #+clj (swap! app-state assoc-in path value)
+  #+cljs (om/transact! @cursor path (constantly value)))
+
+
 (defn remove-edge-record!
   "Mark edge's edge record as deleted. We don't really delete it
   because edge records are referred to by their indices in :edge-records."
   [edge]
-  (let [er-index (:edge-record edge)]
-    #+clj (swap! app-state assoc-in [:edge-records er-index :deleted] true)
-    #+cljs (om/transact! @cursor [:edge-records er-index :deleted]
-                         (constantly true))))
+  (let [er-index (:edge-record edge)
+        path [:edge-records er-index :deleted]]
+    (update! path true)))
 
 
 (defn set-data!
@@ -60,10 +65,9 @@
   [edge data]
   (let [er-index (:edge-record edge)
         r (:r edge)
-        f (:f edge)]
-    #+clj (swap! app-state assoc-in [:edge-records er-index :edges r f :data] data)
-    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :data]
-                         (constantly data))
+        f (:f edge)
+        path [:edge-records er-index :edges r f :data]]
+    (update! path data)
     (get-in @app-state [:edge-records er-index :edges r f])))
 
 
@@ -73,10 +77,9 @@
   (let [er-index (:edge-record edge)
         r (:r edge)
         f (:f edge)
+        path [:edge-records er-index :edges r f :next]
         next {:r (:r next-edge)
               :f (:f next-edge)
               :edge-record (:edge-record next-edge)}]
-    #+clj (swap! app-state assoc-in [:edge-records er-index :edges r f :next] next)
-    #+cljs (om/transact! @cursor [:edge-records er-index :edges r f :next]
-                         (constantly next))
+    (update! path next)
     (get-in @app-state [:edge-records er-index :edges r f])))

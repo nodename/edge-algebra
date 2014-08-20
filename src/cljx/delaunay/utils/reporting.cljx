@@ -4,7 +4,7 @@
 
 
 #+clj
-(defn get-fn-init-sym
+(defn get-fn-name
   "Return the symbol that was used to define the function."
   [f]
   (-> (str f)
@@ -18,7 +18,7 @@
 ;; In ClojureScript (str f) gives the entire source code of the function,
 ;; and we're not going to be able to use the symbol, so make it a keyword:
 #+cljs
-(defn get-fn-init-sym
+(defn get-fn-name
   [f]
   (-> (str f)
       (.replace (js/RegExp. "\n" "gm"), "") ;; remove all newlines
@@ -35,6 +35,6 @@
   and current args of f onto ch before invoking f."
   [ch f]
   (fn [& args]
-    (put! ch (vec (concat [(get-fn-init-sym f)] args)))
+    (put! ch (vec (concat [(get-fn-name f)] args)))
     (apply f args)))
 
