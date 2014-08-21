@@ -5,8 +5,7 @@
    [edge-algebra.core :refer [make-edge! splice!]]
    ;;
    ;; application-specific mutators:
-   [edge-algebra.app-state :refer [set-data! remove-edge-record!
-                                   #+cljs wrap-with-undo]]
+   [edge-algebra.app-state :refer [set-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -15,10 +14,7 @@
    [thi.ng.geom.core :as g]
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
-   [thi.ng.geom.core.utils :refer [norm-sign2]]
-   ;;
-   ;; console logging:
-   [delaunay.utils.reporting :refer [wrap-with-name-and-args-reporting]]))
+   [thi.ng.geom.core.utils :refer [norm-sign2]]))
 
 
 ;; An alias for the 2-D point constructor:
@@ -70,7 +66,6 @@
 
 (defn delete-edge!
   [e]
-  (println "DELETING " (:edge-record e))
   (splice! e (o-prev e))
   (splice! (sym e) (o-prev (sym e)))
   (remove-edge-record! e))
@@ -258,18 +253,3 @@
                   (recur (connect! (sym cross-edge) (sym l-candidate)))))))
 
         [ldo rdo]))))
-
-
-(defn with-reporting
-  [ch f & [args]]
-  (with-redefs [make-d-edge! (wrap-with-name-and-args-reporting ch make-d-edge!)
-                delete-edge! (wrap-with-name-and-args-reporting ch delete-edge!)
-                in-circle? (wrap-with-name-and-args-reporting ch in-circle?)]
-    (f args)))
-
-#+cljs
-(defn with-undo
-  [f & [args]]
-  (with-redefs [make-d-edge! (wrap-with-undo make-d-edge!)
-                delete-edge! (wrap-with-undo delete-edge!)]
-    (f args)))

@@ -1,6 +1,6 @@
 (ns delaunay.utils.reporting
-  #+clj (:require [clojure.core.async :refer [put!]])
-  #+cljs (:require [cljs.core.async :refer [put!]]))
+  (:require [delaunay.div-conq :as dq]
+            [#+clj clojure.core.async #+cljs cljs.core.async :refer [put!]]))
 
 
 #+clj
@@ -38,3 +38,10 @@
     (put! ch (vec (concat [(get-fn-name f)] args)))
     (apply f args)))
 
+
+(defn with-reporting
+  [ch f & [args]]
+  (with-redefs [dq/make-d-edge! (wrap-with-name-and-args-reporting ch dq/make-d-edge!)
+                dq/delete-edge! (wrap-with-name-and-args-reporting ch dq/delete-edge!)
+                dq/in-circle? (wrap-with-name-and-args-reporting ch dq/in-circle?)]
+    (f args)))

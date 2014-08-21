@@ -1,7 +1,8 @@
 (ns delaunay.delaunay-test
   (:require [clojure.test :refer :all]
             [clojure.core.async :refer [<! go go-loop chan]]
-            [delaunay.div-conq :refer [pt org dest delaunay with-reporting]]))
+            [delaunay.div-conq :refer [pt org dest delaunay]]
+            [delaunay.utils.reporting :refer [with-reporting]]))
 
 
 #_

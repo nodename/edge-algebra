@@ -7,7 +7,7 @@
 
 (def app-history (atom [@app-state]))
 (def app-future (atom []))
-(def preview-state (atom {}))
+(def preview-state (atom @app-state))
 
 
 (defn forget-everything []

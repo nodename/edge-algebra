@@ -68,18 +68,18 @@
         f (:f edge)
         path [:edge-records er-index :edges r f :data]]
     (update! path data)
-    (get-in @app-state [:edge-records er-index :edges r f])))
+    (get-in @app-state (vec (butlast path)))))
 
 
 (defn set-next!
   "Set edge's next. Return the updated edge."
   [edge next-edge]
-  (let [er-index (:edge-record edge)
+  (let [next {:r (:r next-edge)
+              :f (:f next-edge)
+              :edge-record (:edge-record next-edge)}
+        er-index (:edge-record edge)
         r (:r edge)
         f (:f edge)
-        path [:edge-records er-index :edges r f :next]
-        next {:r (:r next-edge)
-              :f (:f next-edge)
-              :edge-record (:edge-record next-edge)}]
+        path [:edge-records er-index :edges r f :next]]
     (update! path next)
-    (get-in @app-state [:edge-records er-index :edges r f])))
+    (get-in @app-state (vec (butlast path)))))

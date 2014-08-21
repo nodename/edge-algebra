@@ -2,8 +2,9 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [>! <! chan]]
-            [delaunay.div-conq :refer [pt delaunay with-reporting with-undo]]
-            [edge-algebra.app-state :as app-state :refer [set-cursor!]]
+            [delaunay.div-conq :as dq :refer [pt delaunay]]
+            [delaunay.utils.reporting :refer [with-reporting]]
+            [edge-algebra.app-state :as app-state :refer [set-cursor! wrap-with-undo]]
             [view.view :refer [render-edges]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
@@ -11,7 +12,11 @@
 
 (enable-console-print!)
 
-(reset! time-machine/preview-state @app-state/app-state)
+(defn with-undo
+  [f & [args]]
+  (with-redefs [dq/make-d-edge! (wrap-with-undo dq/make-d-edge!)
+                dq/delete-edge! (wrap-with-undo dq/delete-edge!)]
+    (f args)))
 
 
 (defn printer

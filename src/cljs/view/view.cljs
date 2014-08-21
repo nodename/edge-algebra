@@ -2,7 +2,7 @@
   (:require [cljs.core.async :refer [>! <! chan]]
             [thi.ng.geom.core.vector :refer [vec2]]
             [edge-algebra.record :refer [get-e0 get-edge]]
-            [delaunay.div-conq :refer [pt delaunay with-reporting]]
+            [delaunay.div-conq :refer [pt delaunay]]
             [delaunay.utils.circle :refer [center-and-radius]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
@@ -110,23 +110,3 @@
                (when (or (nil? limit) (< index limit))
                (recur (inc index))))
     ch))
-
-(defn main
-  []
-  (let [canvas1 (init-canvas (.-body js/document) 1)
-        canvas2 (init-canvas (.-body js/document) 2)
-        circle-canvas (init-canvas (.-body js/document) 3)
-        app-state (atom [])]
-    (add-watch app-state :renderer (fn [_ _ _ lines]
-                                     (render-edges (.getContext canvas1 "2d") lines)))
-    (let [ch (drawer app-state circle-canvas)
-        a (pt 0 0)
-        b (pt 0 1)
-        c (pt 1 0)
-        d (pt 2 0)
-        e (pt 3 1)
-        f (pt 4 0)]
-    (let [[l-edge r-edge] (with-reporting ch delaunay [a b c d e f])])
-   ; (render canvas2 (vec2 300 300) 50)
-    )))
-
