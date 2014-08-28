@@ -60,5 +60,8 @@
            (update elapsed-time (om/get-node owner "my-canvas") animation))))
 
      (dom/canvas #js {:ref "my-canvas" :id (str "animator-canvas-" index)
-                      :z-index (* 2 (inc index))
-                      :position "absolute" :left "0px" :top "0px"}))))
+                      :style #js {:position "absolute" :left "0px" :top "0px"
+                                  :width "800px" :height "400px"
+                                  :z-index (* 2 (inc index))}
+                      :width "800px" :height "400px"
+                      }))))

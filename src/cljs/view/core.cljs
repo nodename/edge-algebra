@@ -117,26 +117,36 @@
     (render
      [this]
 
-     (dom/div #js {:style #js {:width "800" :height "400"}}
+     (dom/div #js {:width "800px" :height "500px"
+                   :style #js {:width "800px" :height "500px"}}
+
 
               (dom/canvas #js {:id "delaunay-canvas" :ref "delaunay-canvas"
-                               :width 800 :height 400 :z-index 1})
+                               :style #js {:position "absolute" :left "0px" :top "0px"
+                                           :width "800px" :height "400px"
+                                           :z-index 1}
+                               :width "800px" :height "400px"
+                               })
 
 
-              (dom/button #js {:width "20%" :float "left"
+              (dom/button #js {:width "20%"
+                               :style #js {:position "absolute" :top "420px" :left "20px"}
                                :onClick (fn [e]
                                           (println "undo")
                                           (do-undo))}
                           "Undo")
-              (dom/button #js {:width "20%" :float "left"
+              (dom/button #js {:width "20%"
+                               :style #js {:position "absolute" :top "420px" :left "80px"}
                                :onClick (fn [e]
                                           (println "redo")
                                           (do-redo))}
                           "Redo")
-              (dom/button #js {:width "20%" :float "left"
+              (dom/button #js {:width "20%"
+                               :style #js {:position "absolute" :top "420px" :left "140px"}
                                :onClick (fn [e]
                                           (println "hello"))}
                           "Hello?")
+
 
 
               (let [m {:state {:start-time (.now (.-performance js/window))
@@ -147,6 +157,9 @@
                        :fn #(when % (make-animation (.-value %) 0))}]
 
                 (om/build animator (first (:circles cursor)) m))
+
+
+
 
                 #_(map (fn [x i]
                        (om/build animator x (-> m
