@@ -14,7 +14,7 @@
      (timer-chan delay msg (chan)))
   ([delay msg stop start]
      (let [out (chan)]
-       (go-loop [running? true]
+       (go-loop [running? false]
                 (let [t (timeout delay)
                       [val ch] (alts! [stop t start])]
                   (when running?
@@ -39,9 +39,8 @@
     (will-mount
      [_]
      (let [timer (timer-chan 10 :tick
-                                (om/get-state owner :stop-timer)
-                                (om/get-state owner :start-timer))]
-
+                             (om/get-state owner :stop-timer)
+                             (om/get-state owner :start-timer))]
        (go-loop []
                 (<! timer)
                 (let [time (.now (.-performance js/window))
