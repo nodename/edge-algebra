@@ -30,4 +30,4 @@
                                      (mag-squared p3) (.-x p3) (.-y p3))))
         center (vec2 (- (/ d (* 2 a))) (- (/ e (* 2 a))))
         radius (Math/sqrt (- (/ (+ (* d d) (* e e)) (* 4 (* a a))) (/ f a)))]
-    [center radius]))
+    {:center center :radius radius}))

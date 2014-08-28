@@ -1,7 +1,8 @@
 (ns edge-algebra.app-state
   #+cljs (:require [om.core :as om :include-macros true]))
 
-(def app-state (atom {:edge-records []}))
+(def app-state (atom {:edge-records []
+                      :circles []}))
 
 #+cljs
 (def cursor (atom nil))
@@ -35,8 +36,14 @@
   [f]
   (fn [& args]
     (let [val (apply f args)]
+      (println "Adding to undo")
       (add-to-undo!)
       val)))
+
+(defn update!
+  [path value]
+  #+clj (swap! app-state assoc-in path value)
+  #+cljs (om/transact! @cursor path (constantly value)))
 
 
 (defn add-edge-record!
@@ -44,11 +51,35 @@
   #+clj (swap! app-state update-in [:edge-records] conj er)
   #+cljs (om/transact! @cursor [:edge-records] #(conj % er)))
 
+(defn add-circle!
+  [c]
+  (println "Adding a circle")
+  #+clj (swap! app-state update-in [:circles] conj c)
+  #+cljs (om/transact! @cursor [:circles] #(conj % c)))
 
-(defn update!
-  [path value]
-  #+clj (swap! app-state assoc-in path value)
-  #+cljs (om/transact! @cursor path (constantly value)))
+(defn clear-circles!
+  []
+  (update! [:circles] []))
+
+(defn wrap-with-add-circle
+  "Return a function that will add the args of f to :circles
+  before invoking f."
+  [f]
+  (fn [& args]
+    (add-circle! args)
+    (println "Add:" (count (:circles @app-state)))
+    (apply f args)))
+
+(defn wrap-with-clear-circles
+  "Return a function that will reset :circles after invoking f."
+  [f]
+  (fn [& args]
+    (let [val (apply f args)]
+      (println "Clearing circles")
+      (clear-circles!)
+      val)))
+
+
 
 
 (defn remove-edge-record!

@@ -46,7 +46,8 @@
   (when (undo-is-possible)
     (swap! app-future conj (last @app-history))
     (swap! app-history pop)
-    (reset! app-state (last @app-history))))
+    (reset! app-state (last @app-history))
+    (println "do-undo:" (count (:circles @app-state)) "circles")))
 
 (defn do-redo []
   (when (redo-is-possible)

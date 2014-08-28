@@ -22,12 +22,16 @@
 (defn draw-circle
   [context center radius line-width scale {:keys [r g b a]
                                      :or {a 1.0}}]
-  (let [h (.-height (.-canvas context))]
+  (let [h (.-height (.-canvas context))
+        center-x (* scale (.-x center))
+        center-y (- h (* scale (.-y center)))
+        radius (* scale radius)]
+    (println "draw-circle: x:" center-x "y:" center-y "r:" radius)
     (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
     (set! (. context -lineWidth) line-width)
     (.beginPath context)
     ;; x y radius startAngle endAngle counterClockwise?:
-    (.arc context (* scale (.-x center)) (- h (* scale (.-y center))) (* scale radius) 0 (* 2 Math/PI) false)
+    (.arc context center-x center-y radius 0 (* 2 Math/PI) false)
     (.stroke context)))
 
 (defn init-canvas
@@ -78,8 +82,9 @@
         (start-animation update stop?)))
 
 (defn render-edges
-  [context edge-records]
-  (let [line-width 2
+  [canvas edge-records]
+  (let [context (.getContext canvas "2d")
+        line-width 2
         scale 200
         line-color {:r 255 :g 0 :b 0}]
     (.clearRect context 0 0 (.-width (.-canvas context)) (.-height (.-canvas context)))
@@ -96,6 +101,41 @@
     (draw-fading-circle context center radius 2 1 {:r 255 :g 0 :b 0} 500)))
 
 
+(def canvas-pool (atom {:canvases []
+                        :depth 1}))
+
+(defn get-circle-canvas
+  [parent]
+  (if (> (count (:canvases @canvas-pool)) 0)
+    (let [canvas (first (:canvases @canvas-pool))]
+      (swap! canvas-pool update-in [:canvases] drop 1)
+      canvas)
+    (let [depth (get-in @canvas-pool [:depth])]
+      (swap! canvas-pool update-in [:depth] inc)
+      (init-canvas parent depth))))
+
+(defn release-circle-canvas
+  [canvas]
+  (swap! canvas-pool update-in [:canvases] conj canvas))
+
+
+(defn render-circle
+ [parent center radius]
+  (println "render-circle: center" center "radius" radius)
+ (let [canvas (get-circle-canvas parent)
+       context (.getContext canvas "2d")
+       scale 200]
+   (.clearRect context 0 0 (.-width canvas) (.-height canvas))
+   #_(draw-fading-circle context center radius 2 scale {:r 255 :g 0 :b 0} 500)
+   (draw-circle context center radius 2 scale {:r 255 :g 0 :b 0})))
+
+(defn render-circles
+  [parent circles]
+  (println "Circles: " (count circles))
+  (doseq [circle circles]
+    (let [[center radius] (apply center-and-radius (butlast circle))]
+      (render-circle parent center radius))))
+
 (defn drawer
   [app-state circle-canvas & [limit]]
   (let [ch (chan 10)]
@@ -110,3 +150,25 @@
                (when (or (nil? limit) (< index limit))
                (recur (inc index))))
     ch))
+
+#_
+(defn main
+  []
+  (let [canvas1 (init-canvas (.-body js/document) 1)
+        canvas2 (init-canvas (.-body js/document) 2)
+        circle-canvas (init-canvas (.-body js/document) 3)
+        app-state (atom [])]
+    (add-watch app-state :renderer (fn [_ _ _ lines]
+                                     (render-edges (.getContext canvas1 "2d") lines)))
+  (let [ch (drawer app-state circle-canvas)
+        a (pt 0 0)
+        b (pt 0 1)
+        c (pt 1 0)
+        d (pt 2 0)
+        e (pt 3 1)
+        f (pt 4 0)]
+    (let [[l-edge r-edge] (with-reporting ch delaunay [a b c d e f])]))
+
+    (render-circle (vec2 300 300) 50)
+    ))
+

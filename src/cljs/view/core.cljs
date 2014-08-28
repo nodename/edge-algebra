@@ -1,21 +1,27 @@
 (ns view.core
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [>! <! chan]]
+            [cljs.core.async :refer [>! <! chan alts!]]
             [delaunay.div-conq :as dq :refer [pt delaunay]]
+            [delaunay.utils.circle :refer [center-and-radius]]
             [delaunay.utils.reporting :refer [with-reporting]]
-            [edge-algebra.app-state :as app-state :refer [set-cursor! wrap-with-undo]]
+            [edge-algebra.app-state :as app-state :refer [set-cursor!
+                                                          wrap-with-undo
+                                                          wrap-with-add-circle
+                                                          wrap-with-clear-circles]]
             [view.view :refer [render-edges]]
+            [view.animator :refer [animator]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
-  (:require-macros [cljs.core.async.macros :refer [go-loop]]))
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 (enable-console-print!)
 
 (defn with-undo
   [f & [args]]
-  (with-redefs [dq/make-d-edge! (wrap-with-undo dq/make-d-edge!)
-                dq/delete-edge! (wrap-with-undo dq/delete-edge!)]
+  (with-redefs [dq/make-d-edge! (wrap-with-clear-circles (wrap-with-undo dq/make-d-edge!))
+                dq/delete-edge! (wrap-with-clear-circles (wrap-with-undo dq/delete-edge!))
+                dq/in-circle? (wrap-with-add-circle dq/in-circle?)]
     (f args)))
 
 
@@ -40,10 +46,66 @@
     (with-reporting ch (with-undo delaunay [a b c d e f])))) ;; ugh, they don't compose
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn draw-circle
+  [context center radius line-width scale {:keys [r g b a]
+                                           :or {a 1.0}}]
+  (let [h (.-height (.-canvas context))
+        center-x (* scale (:x center))
+        center-y (- h (* scale (:y center)))
+        radius (* scale radius)]
+    (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
+    (set! (. context -lineWidth) line-width)
+    (.beginPath context)
+    ;; x y radius startAngle endAngle counterClockwise?:
+    (.arc context center-x center-y radius 0 (* 2 Math/PI) false)
+    (.stroke context)))
+
+(defn alpha
+  [elapsed-time {:keys [delay duration]}]
+  (* .001 (- (+ delay duration) elapsed-time)))
+
+(defn fading-circle-stop?
+  [elapsed-time opts]
+  (<= (alpha elapsed-time opts) 0))
+
+(defn fading-circle-update
+  [elapsed-time canvas {:keys [center radius line-width scale color delay] :as opts}]
+  (let [context (.getContext canvas "2d")
+        a (alpha elapsed-time opts)]
+    (when (>= elapsed-time delay)
+      (.clearRect context 0 0 (.-width canvas) (.-height canvas))
+      (draw-circle context center radius line-width scale
+                   (merge color {:a a})))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def colors (cycle [{:r 255 :g 0 :b 0}
+                    {:r 0 :g 255 :b 0}
+                    {:r 0 :g 0 :b 255}]))
+
+
+(defn make-animation
+  [circle index]
+  (merge (apply center-and-radius (butlast circle))
+         {:line-width 2
+          :scale 200
+          :duration 500
+          :color (nth colors index)
+          :delay (* 200 index)}))
+
+(defn make-animations
+  [circles]
+  (map make-animation circles (range)))
+
+
 
 (defn edges-view
-  [cursor owner]
+  [cursor owner opts]
   (reify
+    om/IInitState
+    (init-state
+     [this]
+     {})
 
     om/IWillMount
     (will-mount
@@ -51,25 +113,68 @@
      (set-cursor! cursor)
      (run-delaunay))
 
-    om/IDidUpdate
-    (did-update
-     [this prev-props prev-state]
-     (let [context (-> (. js/document (getElementById "delaunay-canvas"))
-                       (.getContext "2d"))]
-       (render-edges context (:edge-records (.-value cursor)))))
-
     om/IRender
     (render
      [this]
-     (dom/div #js {:style #js {:width "100%" :height "100%"}}
-              (dom/canvas #js {:id "delaunay-canvas"
-                               :width 800 :height 400})
+
+     (dom/div #js {:style #js {:width "800" :height "400"}}
+
+              (dom/canvas #js {:id "delaunay-canvas" :ref "delaunay-canvas"
+                               :width 800 :height 400 :z-index 1})
+
+
               (dom/button #js {:width "20%" :float "left"
-                               :onClick (fn [e] (do-undo))}
+                               :onClick (fn [e]
+                                          (println "undo")
+                                          (do-undo))}
                           "Undo")
               (dom/button #js {:width "20%" :float "left"
-                               :onClick (fn [e] (do-redo))}
-                          "Redo")))))
+                               :onClick (fn [e]
+                                          (println "redo")
+                                          (do-redo))}
+                          "Redo")
+              (dom/button #js {:width "20%" :float "left"
+                               :onClick (fn [e]
+                                          (println "hello"))}
+                          "Hello?")
+
+
+              (let [m {:state {:start-time (.now (.-performance js/window))
+                               :elapsed-time 0}
+                       :opts {:stop? fading-circle-stop?
+                              :update fading-circle-update
+                              :index 0}
+                       :fn #(when % (make-animation (.-value %) 0))}]
+
+                (om/build animator (first (:circles cursor)) m))
+
+                #_(map (fn [x i]
+                       (om/build animator x (-> m
+                                                (assoc ::index i)
+                                                (assoc-in [:opts :index] i)))
+                     (:circles cursor) (range)))
+
+              #_(om/build animator
+                        (:circles cursor)
+                        {:state {:start-time (.now (.-performance js/window))
+                                 :elapsed-time 0}
+                         :opts {:stop? fading-circle-stop?
+                                :update fading-circle-update}
+                         :fn #(make-animation %)})
+                ))
+
+    om/IDidUpdate
+    (did-update
+     [this prev-props prev-state]
+     (let [canvas (om/get-node owner "delaunay-canvas")]
+       (render-edges canvas (:edge-records (.-value cursor)))))
+
+
+
+
+           ))
+
+
 
 
 (om/root
