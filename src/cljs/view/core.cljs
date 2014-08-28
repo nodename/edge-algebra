@@ -151,14 +151,15 @@
 
 
 
-              (let [m {:state {:start-time (.now (.-performance js/window))
-                               :elapsed-time 0}
-                       :opts {:stop? fading-circle-stop?
-                              :update fading-circle-update
-                              :index 0}
-                       :fn #(when % (make-animation (.-value %) 0))}]
+              (let [m (fn [index]
+                        {:state {:start-time (.now (.-performance js/window))
+                                 :elapsed-time 0}
+                         :opts {:stop? fading-circle-stop?
+                                :update fading-circle-update
+                                :index index}
+                         :fn #(when % (make-animation (.-value %) index))})]
 
-                (om/build animator (first (:circles cursor)) m))
+                (om/build animator ((:circles cursor) 0) (m 0)))
 
 
 
