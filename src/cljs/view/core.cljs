@@ -63,11 +63,14 @@
 
 (defn alpha
   [elapsed-time {:keys [delay duration]}]
-  (* .001 (- (+ delay duration) elapsed-time)))
+  (println "alpha: delay:" delay "duration:" duration "elapsed-time:" elapsed-time)
+  (+ 1 (/ (- delay elapsed-time) duration)))
 
 (defn fading-circle-stop?
   [elapsed-time opts]
-  (<= (alpha elapsed-time opts) 0))
+  (let [a (alpha elapsed-time opts)]
+    (println "stop?: alpha" a)
+    (<= a 0)))
 
 (defn fading-circle-update
   [elapsed-time canvas {:keys [center radius line-width scale color delay] :as opts}]
@@ -125,8 +128,7 @@
                                :style #js {:position "absolute" :left "0px" :top "0px"
                                            :width "800px" :height "400px"
                                            :z-index 1}
-                               :width "800px" :height "400px"
-                               })
+                               :width "800px" :height "400px"})
 
 
               (dom/button #js {:width "20%"

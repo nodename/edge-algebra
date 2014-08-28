@@ -1,12 +1,8 @@
 (ns view.animator
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [delaunay.utils.circle :refer [center-and-radius]]
-            [cljs.core.async :refer [put! <! chan timeout close!]]
-            [view.canvas :refer [get-canvas]])
+            [cljs.core.async :refer [put! <! chan timeout close!]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
-
-;; A generic one-shot time-based animation component.
 
 
 ;; https://github.com/jxa/rain/blob/master/src/cljs/rain/async.cljs:
@@ -16,13 +12,17 @@
    to stop will terminate the timer"
   ([delay msg]
      (timer-chan delay msg (chan)))
-  ([delay msg stop]
+  ([delay msg stop start]
      (let [out (chan)]
-       (go-loop []
-                (let [[val ch] (alts! [stop (timeout delay)])]
-                  (when-not (= ch stop)
-                    (>! out msg)
-                      (recur))))
+       (go-loop [running? true]
+                (let [t (timeout delay)
+                      [val ch] (alts! [stop t start])]
+                  (when running?
+                    (>! out msg))
+                  (condp = ch
+                    stop (recur false)
+                    t (recur running?)
+                    start (recur true))))
        out)))
 
 
@@ -33,13 +33,15 @@
     (init-state
      [this]
      {:stop-timer (chan)
-      })
+      :start-timer (chan)})
 
     om/IWillMount
-
     (will-mount
      [_]
-     (let [timer (timer-chan 10 :tick (om/get-state owner :stop-timer))]
+     (let [timer (timer-chan 10 :tick
+                                (om/get-state owner :stop-timer)
+                                (om/get-state owner :start-timer))]
+
        (go-loop []
                 (<! timer)
                 (let [time (.now (.-performance js/window))
@@ -49,10 +51,12 @@
 
     om/IRenderState
     (render-state
-     [this {:keys [elapsed-time stop-timer] :as state}]
+     [this {:keys [elapsed-time stop-timer start-timer] :as state}]
+     (when (zero? elapsed-time)
+       (put! start-timer :start))
      (let [animation cursor]
        (when animation
-         (println "animation:" index animation elapsed-time)
+         #_(println "animation:" index animation elapsed-time)
          (if (stop? elapsed-time animation)
            (do
              (println "stop" index "at" elapsed-time)
@@ -63,5 +67,4 @@
                       :style #js {:position "absolute" :left "0px" :top "0px"
                                   :width "800px" :height "400px"
                                   :z-index (* 2 (inc index))}
-                      :width "800px" :height "400px"
-                      }))))
+                      :width "800px" :height "400px"}))))
