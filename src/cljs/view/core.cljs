@@ -10,7 +10,7 @@
                                                           wrap-with-add-circle
                                                           wrap-with-clear-circles]]
             [view.view :refer [render-edges]]
-            [view.animator :refer [animator]]
+            [view.animator :refer [animator-0 animator-1]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
@@ -63,13 +63,13 @@
 
 (defn alpha
   [elapsed-time {:keys [delay duration]}]
-  (println "alpha: delay:" delay "duration:" duration "elapsed-time:" elapsed-time)
+  #_(println "alpha: delay:" delay "duration:" duration "elapsed-time:" elapsed-time)
   (+ 1 (/ (- delay elapsed-time) duration)))
 
 (defn fading-circle-stop?
   [elapsed-time opts]
   (let [a (alpha elapsed-time opts)]
-    (println "stop?: alpha" a)
+   #_ (println "stop?: alpha" a)
     (<= a 0)))
 
 (defn fading-circle-update
@@ -151,7 +151,9 @@
 
 
 
-              (let [m (fn [index]
+              (println "circles:" (:circles cursor))
+
+            #_  (let [m (fn [index]
                         {:state {:start-time (.now (.-performance js/window))
                                  :elapsed-time 0}
                          :opts {:stop? fading-circle-stop?
@@ -159,9 +161,26 @@
                                 :index index}
                          :fn #(when % (make-animation (.-value %) index))})]
 
-                (om/build animator ((:circles cursor) 0) (m 0)))
 
 
+              #_  (om/build-all-f animator-0 (:circles cursor) m)
+                (om/build animator-1 (:circles cursor) (m 1))
+                )
+
+
+
+
+                (let [m (fn [index]
+                        {:state {:start-time (.now (.-performance js/window))
+                                 :elapsed-time 0}
+                         :opts {:stop? fading-circle-stop?
+                                :update fading-circle-update
+                                :index index}
+                         :fn #(when % (make-animations (.-value %)))})]
+
+                  (when (pos? (count (:circles cursor)))
+                  (om/build animator-1 (:circles cursor) (m 0)))
+                )
 
 
                 #_(map (fn [x i]

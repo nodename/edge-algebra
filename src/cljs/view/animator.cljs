@@ -26,7 +26,7 @@
        out)))
 
 
-(defn animator
+(defn animator-0
   [cursor owner {:keys [stop? update index] :as opts}]
   (reify
     om/IInitState
@@ -55,7 +55,7 @@
        (put! start-timer :start))
      (let [animation cursor]
        (when animation
-         #_(println "animation:" index animation elapsed-time)
+         (println "animation:" index animation elapsed-time)
          (if (stop? elapsed-time animation)
            (do
              (println "stop" index "at" elapsed-time)
@@ -67,3 +67,50 @@
                                   :width "800px" :height "400px"
                                   :z-index (* 2 (inc index))}
                       :width "800px" :height "400px"}))))
+
+
+(defn animator-1
+  [cursor owner {:keys [stop? update index] :as opts}]
+  (reify
+    om/IInitState
+    (init-state
+     [this]
+     {:stop-timer (chan)
+      :start-timer (chan)})
+
+    om/IWillMount
+    (will-mount
+     [_]
+     (let [timer (timer-chan 10 :tick
+                             (om/get-state owner :stop-timer)
+                             (om/get-state owner :start-timer))]
+       (go-loop []
+                (<! timer)
+                (let [time (.now (.-performance js/window))
+                      elapsed-time (- time (om/get-state owner :start-time))]
+                  (om/set-state! owner :elapsed-time elapsed-time))
+                (recur))))
+
+    om/IRenderState
+    (render-state
+     [this {:keys [elapsed-time stop-timer start-timer] :as state}]
+     (when (zero? elapsed-time)
+       (put! start-timer :start))
+     (let [animation (nth cursor index)]
+       (when animation
+         (println "animation:" index animation elapsed-time)
+         (if (stop? elapsed-time animation)
+           (do
+             (println "stop" index "at" elapsed-time)
+             (put! stop-timer :stop))
+           (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
+             (when canvas ;; who knows exactly when it mounts
+               (update elapsed-time canvas animation))))))
+
+     (dom/div #js {}
+              (dom/canvas #js {:id (str "animator-canvas-" index)
+                               :style #js {:position "absolute" :left "0px" :top "0px"
+                                           :width "800px" :height "400px"
+                                           :z-index (* 2 (inc index))}
+                               :width "800px" :height "400px"})))))
+
