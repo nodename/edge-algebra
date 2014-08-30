@@ -10,6 +10,7 @@
                                                           wrap-with-add-circle
                                                           wrap-with-clear-circles]]
             [view.view :refer [render-edges]]
+            [view.fading-circle :refer [fading-circle-stop? fading-circle-update]]
             [view.animator :refer [animator]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
@@ -46,41 +47,6 @@
     (with-reporting ch (with-undo delaunay [a b c d e f])))) ;; ugh, they don't compose
 
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defn draw-circle
-  [context center radius line-width scale {:keys [r g b a]
-                                           :or {a 1.0}}]
-  (let [h (.-height (.-canvas context))
-        center-x (* scale (:x center))
-        center-y (- h (* scale (:y center)))
-        radius (* scale radius)]
-    (set! (. context -strokeStyle) (str "rgba(" r "," g "," b "," a ")"))
-    (set! (. context -lineWidth) line-width)
-    (.beginPath context)
-    ;; x y radius startAngle endAngle counterClockwise?:
-    (.arc context center-x center-y radius 0 (* 2 Math/PI) false)
-    (.stroke context)))
-
-(defn alpha
-  [elapsed-time {:keys [delay duration]}]
-  #_(println "alpha: delay:" delay "duration:" duration "elapsed-time:" elapsed-time)
-  (+ 1 (/ (- delay elapsed-time) duration)))
-
-(defn fading-circle-stop?
-  [elapsed-time opts]
-  (let [a (alpha elapsed-time opts)]
-   #_ (println "stop?: alpha" a)
-    (<= a 0)))
-
-(defn fading-circle-update
-  [elapsed-time canvas {:keys [center radius line-width scale color delay] :as opts}]
-  (let [context (.getContext canvas "2d")
-        a (alpha elapsed-time opts)]
-    (when (>= elapsed-time delay)
-      (.clearRect context 0 0 (.-width canvas) (.-height canvas))
-      (draw-circle context center radius line-width scale
-                   (merge color {:a a})))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def colors (cycle [{:r 255 :g 0 :b 0}
                     {:r 0 :g 255 :b 0}
@@ -102,7 +68,7 @@
 
 
 
-(defn edges-view
+(defn delaunay-view
   [cursor owner opts]
   (reify
     om/IWillMount
@@ -131,27 +97,27 @@
                                :onClick (fn [e]
                                           (println "undo")
                                           (do-undo))}
-                          "Undo")
+                          "[__<__]")
               (dom/button #js {:width "20%"
-                               :style #js {:position "absolute" :top "420px" :left "80px"}
+                               :style #js {:position "absolute" :top "420px" :left "120px"}
                                :onClick (fn [e]
                                           (println "redo")
                                           (do-redo))}
-                          "Redo")
+                          "[__>__]")
               (dom/button #js {:width "20%"
-                               :style #js {:position "absolute" :top "420px" :left "140px"}
+                               :style #js {:position "absolute" :top "420px" :left "220px"}
                                :onClick (fn [e]
                                           (println "hello"))}
                           "Hello?")
 
               (println "circles:" (:circles cursor))
 
-              (let [m {:state {:start-time (.now (.-performance js/window))}
-                       :opts {:stop? fading-circle-stop?
-                              :update fading-circle-update}
-                       :fn #(make-animations (.-value %))}]
-
-                (om/build animator (:circles cursor) m))))
+              (om/build animator
+                        (:circles cursor)
+                        {:state {:start-time (.now (.-performance js/window))}
+                         :opts {:stop? fading-circle-stop?
+                                :update fading-circle-update}
+                         :fn #(make-animations (.-value %))})))
 
 
     om/IDidUpdate
@@ -161,10 +127,8 @@
        (render-edges canvas (:edge-records (.-value cursor)))))))
 
 
-
-
 (om/root
-  edges-view
+  delaunay-view
   app-state/app-state
   {:target (. js/document (getElementById "delaunay"))
    :tx-listen handle-transaction})

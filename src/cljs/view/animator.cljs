@@ -6,14 +6,14 @@
 
 
 (defn clock
-  "Create a channel which emits the current time every delay milliseconds.
+  "Create a channel which emits the current time every interval milliseconds.
   Any value written to start/stop will start/stop the messages."
-  [delay]
+  [interval]
   (let [start (chan)
         stop (chan)
         out (chan)]
     (go-loop [running? true]
-             (let [t (timeout delay)
+             (let [t (timeout interval)
                    [_ ch] (alts! [stop t start])]
                (when running?
                   (let [now (.now (.-performance js/window))]
@@ -49,7 +49,7 @@
     (init-state
      [this]
      {:clock (clock 10)})
-    ;; :start-time is injected
+    ;; :start-time must be injected
 
     om/IWillMount
     (will-mount
