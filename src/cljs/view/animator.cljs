@@ -49,8 +49,7 @@
     (init-state
      [this]
      {:clock (clock 10)})
-    ;; :start-time and :elapsed-time are injected
-
+    ;; :start-time is injected
 
     om/IWillMount
     (will-mount

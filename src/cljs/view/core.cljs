@@ -146,8 +146,7 @@
 
               (println "circles:" (:circles cursor))
 
-              (let [m {:state {:start-time (.now (.-performance js/window))
-                               :elapsed-time 0}
+              (let [m {:state {:start-time (.now (.-performance js/window))}
                        :opts {:stop? fading-circle-stop?
                               :update fading-circle-update}
                        :fn #(make-animations (.-value %))}]
