@@ -1,9 +1,10 @@
-(defproject edge-algebra "0.1.0-SNAPSHOT"
+(defproject com.nodename/edge-algebra "0.1.0-SNAPSHOT"
   :description "An implementation of
   Guibas, L. and J. Stolfi. 1985. \"Primitives for the Manipulation of
   General Subdivisions and the Computation of Voronoi Diagrams,\"
   ACM Transactions on Graphics 4(2):74-123."
-  :url "http://example.com/FIXME"
+  :url "http://github.com/nodename/edge-algebra"
+  :author "Alan Shaw"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
@@ -15,9 +16,9 @@
       :min-lein-version "2.0.0"
       :source-paths ["src/clj" "target/generated/clj"]
 
-      :plugins [[lein-cljsbuild "0.3.0"]
+      :plugins [[lein-cljsbuild "1.0.3"
                 [lein-simpleton "1.1.0"]
-                [com.keminglabs/cljx "0.4.0"  :exclusions [org.clojure/clojure]]]
+                [com.keminglabs/cljx "0.4.0"  :exclusions [org.clojure/clojure]]]]
 
       :cljx {:builds [{:source-paths ["src/cljx"]
                        :output-path "target/generated/clj"

@@ -12,7 +12,7 @@
   (let [start (chan)
         stop (chan)
         out (chan)]
-    (go-loop [running? false]
+    (go-loop [running? true]
              (let [t (timeout delay)
                    [_ ch] (alts! [stop t start])]
                (when running?
@@ -56,25 +56,19 @@
 
     om/IRenderState
     (render-state
-     [_ {:keys [elapsed-time clock] :as state}]
-     (let [[_ start-clock stop-clock] clock]
-       (when (zero? elapsed-time)
-         (put! start-clock :giggity)
-         (println "start:" (count cursor) "animations"))
-
-       (let [foobar (fn [index]
-                      (let [animation (nth cursor index)]
-                        (if (stop? elapsed-time animation)
-                          (do
-                            (println "stop" index "at" elapsed-time)
-                            #_ (put! stop-clock :okely-dokely)) ;; will want to stop only when all anims are done
-                          (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
-                            (when canvas ;; who knows exactly when it mounts
-                              (update elapsed-time canvas animation))))))]
-         (doseq [index (range (count cursor))]
-           (foobar index)))
+     [_ {:keys [elapsed-time] :as state}]
+     (let [play-animation (fn [index]
+                            (let [animation (nth cursor index)]
+                              (when-not (stop? elapsed-time animation)
+                                (let [canvas (. js/document
+                                                (getElementById
+                                                 (str "animator-canvas-" index)))]
+                                  (when canvas ;; who knows exactly when it mounts
+                                    (update elapsed-time canvas animation))))))]
+       (doseq [index (range (count cursor))]
+         (play-animation index)))
 
        (apply dom/div #js {}
                 (map (fn [index] (dom/canvas (canvas-props index)))
-                     (range (count cursor))))))))
+                     (range (count cursor)))))))
 
