@@ -5,112 +5,67 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
 
-;; https://github.com/jxa/rain/blob/master/src/cljs/rain/async.cljs:
-(defn timer-chan
-  "create a channel which emits a message every delay milliseconds
-   if the optional stop parameter is provided, any value written
-   to stop will terminate the timer"
-  ([delay msg]
-     (timer-chan delay msg (chan)))
-  ([delay msg stop start]
-     (let [out (chan)]
-       (go-loop [running? false]
-                (let [t (timeout delay)
-                      [val ch] (alts! [stop t start])]
-                  (when running?
-                    (>! out msg))
-                  (condp = ch
-                    stop (recur false)
-                    t (recur running?)
-                    start (recur true))))
-       out)))
+(defn clock
+  "Create a channel which emits the current time every delay milliseconds.
+  Any value written to start/stop will start/stop the messages."
+  [delay]
+  (let [start (chan)
+        stop (chan)
+        out (chan)]
+    (go-loop [running? false]
+             (let [t (timeout delay)
+                   [_ ch] (alts! [stop t start])]
+               (when running?
+                  (let [now (.now (.-performance js/window))]
+                    (>! out now)))
+               (condp = ch
+                 stop (recur false)
+                 t (recur running?)
+                 start (recur true))))
+    [out start stop]))
 
 
-(defn animator-0
+(defn animator
   [cursor owner {:keys [stop? update index] :as opts}]
   (reify
     om/IInitState
     (init-state
      [this]
-     {:stop-timer (chan)
-      :start-timer (chan)})
+     {:clock (clock 10)})
+    ;; :start-time and :elapsed-time are injected
+
 
     om/IWillMount
     (will-mount
      [_]
-     (let [timer (timer-chan 10 :tick
-                             (om/get-state owner :stop-timer)
-                             (om/get-state owner :start-timer))]
+     (let [[clock] (om/get-state owner :clock)]
        (go-loop []
-                (<! timer)
-                (let [time (.now (.-performance js/window))
-                      elapsed-time (- time (om/get-state owner :start-time))]
+                (let [now (<! clock)
+                      elapsed-time (- now (om/get-state owner :start-time))]
                   (om/set-state! owner :elapsed-time elapsed-time))
                 (recur))))
 
     om/IRenderState
     (render-state
-     [this {:keys [elapsed-time stop-timer start-timer] :as state}]
-     (when (zero? elapsed-time)
-       (put! start-timer :start))
-     (let [animation cursor]
-       (when animation
-         (println "animation:" index animation elapsed-time)
-         (if (stop? elapsed-time animation)
-           (do
-             (println "stop" index "at" elapsed-time)
-             (put! stop-timer :stop))
-           (update elapsed-time (om/get-node owner "my-canvas") animation))))
+     [this {:keys [elapsed-time clock] :as state}]
+     (let [[_ start stop] clock]
+       (when (zero? elapsed-time)
+         (put! start :start))
+       (let [animation (nth cursor index)]
+         (when animation
+           (println "animation:" index animation elapsed-time)
+           (if (stop? elapsed-time animation)
+             (do
+               (println "stop" index "at" elapsed-time)
+               (put! stop :stop)) ;; will want to stop only when all anims are done
+             (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
+               (when canvas ;; who knows exactly when it mounts
+                 (update elapsed-time canvas animation))))))
 
-     (dom/canvas #js {:ref "my-canvas" :id (str "animator-canvas-" index)
-                      :style #js {:position "absolute" :left "0px" :top "0px"
-                                  :width "800px" :height "400px"
-                                  :z-index (* 2 (inc index))}
-                      :width "800px" :height "400px"}))))
-
-
-(defn animator-1
-  [cursor owner {:keys [stop? update index] :as opts}]
-  (reify
-    om/IInitState
-    (init-state
-     [this]
-     {:stop-timer (chan)
-      :start-timer (chan)})
-
-    om/IWillMount
-    (will-mount
-     [_]
-     (let [timer (timer-chan 10 :tick
-                             (om/get-state owner :stop-timer)
-                             (om/get-state owner :start-timer))]
-       (go-loop []
-                (<! timer)
-                (let [time (.now (.-performance js/window))
-                      elapsed-time (- time (om/get-state owner :start-time))]
-                  (om/set-state! owner :elapsed-time elapsed-time))
-                (recur))))
-
-    om/IRenderState
-    (render-state
-     [this {:keys [elapsed-time stop-timer start-timer] :as state}]
-     (when (zero? elapsed-time)
-       (put! start-timer :start))
-     (let [animation (nth cursor index)]
-       (when animation
-         (println "animation:" index animation elapsed-time)
-         (if (stop? elapsed-time animation)
-           (do
-             (println "stop" index "at" elapsed-time)
-             (put! stop-timer :stop))
-           (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
-             (when canvas ;; who knows exactly when it mounts
-               (update elapsed-time canvas animation))))))
-
-     (dom/div #js {}
-              (dom/canvas #js {:id (str "animator-canvas-" index)
-                               :style #js {:position "absolute" :left "0px" :top "0px"
-                                           :width "800px" :height "400px"
-                                           :z-index (* 2 (inc index))}
-                               :width "800px" :height "400px"})))))
+       (dom/div #js {}
+                (dom/canvas #js {:id (str "animator-canvas-" index)
+                                 :style #js {:position "absolute" :left "0px" :top "0px"
+                                             :width "800px" :height "400px"
+                                             :z-index (* 2 (inc index))}
+                                 :width "800px" :height "400px"}))))))
 

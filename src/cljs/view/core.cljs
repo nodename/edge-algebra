@@ -10,7 +10,7 @@
                                                           wrap-with-add-circle
                                                           wrap-with-clear-circles]]
             [view.view :refer [render-edges]]
-            [view.animator :refer [animator-0 animator-1]]
+            [view.animator :refer [animator]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
   (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
@@ -179,7 +179,7 @@
                          :fn #(when % (make-animations (.-value %)))})]
 
                   (when (pos? (count (:circles cursor)))
-                  (om/build animator-1 (:circles cursor) (m 0)))
+                  (om/build animator (:circles cursor) (m 0)))
                 )
 
 
