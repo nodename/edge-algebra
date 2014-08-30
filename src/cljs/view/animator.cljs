@@ -25,6 +25,15 @@
     [out start stop]))
 
 
+(defn canvas-props
+  [index]
+  #js {:id (str "animator-canvas-" index)
+       :style #js {:position "absolute" :left "0px" :top "0px"
+                   :width "800px" :height "400px"
+                   :z-index (* 2 (inc index))}
+       :width "800px" :height "400px"})
+
+
 (defn animator
   [cursor owner {:keys [stop? update index] :as opts}]
   (reify
@@ -47,25 +56,25 @@
 
     om/IRenderState
     (render-state
-     [this {:keys [elapsed-time clock] :as state}]
-     (let [[_ start stop] clock]
+     [_ {:keys [elapsed-time clock] :as state}]
+     (let [[_ start-clock stop-clock] clock]
        (when (zero? elapsed-time)
-         (put! start :start))
-       (let [animation (nth cursor index)]
-         (when animation
-           (println "animation:" index animation elapsed-time)
-           (if (stop? elapsed-time animation)
-             (do
-               (println "stop" index "at" elapsed-time)
-               (put! stop :stop)) ;; will want to stop only when all anims are done
-             (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
-               (when canvas ;; who knows exactly when it mounts
-                 (update elapsed-time canvas animation))))))
+         (put! start-clock :giggity)
+         (println "start:" (count cursor) "animations"))
 
-       (dom/div #js {}
-                (dom/canvas #js {:id (str "animator-canvas-" index)
-                                 :style #js {:position "absolute" :left "0px" :top "0px"
-                                             :width "800px" :height "400px"
-                                             :z-index (* 2 (inc index))}
-                                 :width "800px" :height "400px"}))))))
+       (let [foobar (fn [index]
+                      (let [animation (nth cursor index)]
+                        (println "animation:" index animation elapsed-time)
+                        (if (stop? elapsed-time animation)
+                          (do
+                            (println "stop" index "at" elapsed-time)
+                            #_ (put! stop-clock :okely-dokely)) ;; will want to stop only when all anims are done
+                          (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
+                            (when canvas ;; who knows exactly when it mounts
+                              (update elapsed-time canvas animation))))))]
+         (foobar index))
+
+       (apply dom/div #js {}
+                (map (fn [index] (dom/canvas (canvas-props index)))
+                     (range (count cursor))))))))
 
