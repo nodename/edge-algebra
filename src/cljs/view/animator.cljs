@@ -35,7 +35,7 @@
 
 
 (defn animator
-  [cursor owner {:keys [stop? update index] :as opts}]
+  [cursor owner {:keys [stop? update] :as opts}]
   (reify
     om/IInitState
     (init-state
@@ -64,7 +64,6 @@
 
        (let [foobar (fn [index]
                       (let [animation (nth cursor index)]
-                        (println "animation:" index animation elapsed-time)
                         (if (stop? elapsed-time animation)
                           (do
                             (println "stop" index "at" elapsed-time)
@@ -72,7 +71,8 @@
                           (let [canvas (. js/document (getElementById (str "animator-canvas-" index)))]
                             (when canvas ;; who knows exactly when it mounts
                               (update elapsed-time canvas animation))))))]
-         (foobar index))
+         (doseq [index (range (count cursor))]
+           (foobar index)))
 
        (apply dom/div #js {}
                 (map (fn [index] (dom/canvas (canvas-props index)))

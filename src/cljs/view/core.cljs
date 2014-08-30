@@ -105,11 +105,6 @@
 (defn edges-view
   [cursor owner opts]
   (reify
-    om/IInitState
-    (init-state
-     [this]
-     {})
-
     om/IWillMount
     (will-mount
      [_]
@@ -149,65 +144,22 @@
                                           (println "hello"))}
                           "Hello?")
 
-
-
               (println "circles:" (:circles cursor))
 
-            #_  (let [m (fn [index]
-                        {:state {:start-time (.now (.-performance js/window))
-                                 :elapsed-time 0}
-                         :opts {:stop? fading-circle-stop?
-                                :update fading-circle-update
-                                :index index}
-                         :fn #(when % (make-animation (.-value %) index))})]
+              (let [m {:state {:start-time (.now (.-performance js/window))
+                               :elapsed-time 0}
+                       :opts {:stop? fading-circle-stop?
+                              :update fading-circle-update}
+                       :fn #(make-animations (.-value %))}]
 
+                (om/build animator (:circles cursor) m))))
 
-
-              #_  (om/build-all-f animator-0 (:circles cursor) m)
-                (om/build animator-1 (:circles cursor) (m 1))
-                )
-
-
-
-
-                (let [m (fn [index]
-                        {:state {:start-time (.now (.-performance js/window))
-                                 :elapsed-time 0}
-                         :opts {:stop? fading-circle-stop?
-                                :update fading-circle-update
-                                :index index}
-                         :fn #(when % (make-animations (.-value %)))})]
-
-                  (when (pos? (count (:circles cursor)))
-                  (om/build animator (:circles cursor) (m 0)))
-                )
-
-
-                #_(map (fn [x i]
-                       (om/build animator x (-> m
-                                                (assoc ::index i)
-                                                (assoc-in [:opts :index] i)))
-                     (:circles cursor) (range)))
-
-              #_(om/build animator
-                        (:circles cursor)
-                        {:state {:start-time (.now (.-performance js/window))
-                                 :elapsed-time 0}
-                         :opts {:stop? fading-circle-stop?
-                                :update fading-circle-update}
-                         :fn #(make-animation %)})
-                ))
 
     om/IDidUpdate
     (did-update
      [this prev-props prev-state]
      (let [canvas (om/get-node owner "delaunay-canvas")]
-       (render-edges canvas (:edge-records (.-value cursor)))))
-
-
-
-
-           ))
+       (render-edges canvas (:edge-records (.-value cursor)))))))
 
 
 
