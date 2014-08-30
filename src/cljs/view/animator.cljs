@@ -25,9 +25,17 @@
     [out start stop]))
 
 
+(defn canvas-id
+  [index]
+  (str "animator-canvas-" index))
+
+(defn get-canvas
+  [index]
+  (. js/document (getElementById (canvas-id index))))
+
 (defn canvas-props
   [index]
-  #js {:id (str "animator-canvas-" index)
+  #js {:id (canvas-id index)
        :style #js {:position "absolute" :left "0px" :top "0px"
                    :width "800px" :height "400px"
                    :z-index (* 2 (inc index))}
@@ -35,7 +43,7 @@
 
 
 (defn animator
-  [cursor owner {:keys [stop? update] :as opts}]
+  [animations owner {:keys [stop? update] :as opts}]
   (reify
     om/IInitState
     (init-state
@@ -57,18 +65,14 @@
     om/IRenderState
     (render-state
      [_ {:keys [elapsed-time] :as state}]
-     (let [play-animation (fn [index]
-                            (let [animation (nth cursor index)]
-                              (when-not (stop? elapsed-time animation)
-                                (let [canvas (. js/document
-                                                (getElementById
-                                                 (str "animator-canvas-" index)))]
-                                  (when canvas ;; who knows exactly when it mounts
-                                    (update elapsed-time canvas animation))))))]
-       (doseq [index (range (count cursor))]
-         (play-animation index)))
+     (doseq [index (range (count animations))]
+       (let [animation (nth animations index)]
+         (when-not (stop? elapsed-time animation)
+           (let [canvas (get-canvas index)]
+             (when canvas ;; who knows exactly when it mounts
+               (update elapsed-time canvas animation))))))
 
-       (apply dom/div #js {}
-                (map (fn [index] (dom/canvas (canvas-props index)))
-                     (range (count cursor)))))))
+     (apply dom/div #js {}
+            (map (fn [index] (dom/canvas (canvas-props index)))
+                 (range (count animations)))))))
 
