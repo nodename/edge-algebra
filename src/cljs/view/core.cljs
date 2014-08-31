@@ -1,7 +1,7 @@
 (ns view.core
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [>! <! chan alts!]]
+            [cljs.core.async :refer [<! chan]]
             [delaunay.div-conq :as dq :refer [pt delaunay]]
             [delaunay.utils.circle :refer [center-and-radius]]
             [delaunay.utils.reporting :refer [with-reporting]]
@@ -9,12 +9,12 @@
                                                           wrap-with-undo
                                                           wrap-with-add-circle
                                                           wrap-with-clear-circles]]
-            [view.view :refer [render-edges]]
-            [view.fading-circle :refer [fading-circle-stop? fading-circle-update]]
+            [view.edges :refer [render-edges]]
+            [view.fading-circle :refer [fading-circle-update]]
             [view.animator :refer [animator]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo]])
-  (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
+  (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
 (enable-console-print!)
 
@@ -48,9 +48,11 @@
 
 
 
-(def colors (cycle [{:r 255 :g 0 :b 0}
-                    {:r 0 :g 255 :b 0}
-                    {:r 0 :g 0 :b 255}])) ;; TODO make this a spectrum
+(def colors (cycle [{:r 138 :g 155 :b 15}
+                    {:r 0 :g 160 :b 176}
+                    {:r 204 :g 51 :b 63}
+                    {:r 235 :g 104 :b 65}
+                    {:r 237 :g 201 :b 81}]))
 
 
 (defn make-animation
@@ -94,20 +96,17 @@
 
               (dom/button #js {:width "20%"
                                :style #js {:position "absolute" :top "420px" :left "20px"}
-                               :onClick (fn [e]
-                                          (println "undo")
-                                          (do-undo))}
+                               :onClick (fn [e] (do-undo))}
                           "[__<__]")
+
               (dom/button #js {:width "20%"
                                :style #js {:position "absolute" :top "420px" :left "120px"}
-                               :onClick (fn [e]
-                                          (println "redo")
-                                          (do-redo))}
+                               :onClick (fn [e] (do-redo))}
                           "[__>__]")
+
               (dom/button #js {:width "20%"
                                :style #js {:position "absolute" :top "420px" :left "220px"}
-                               :onClick (fn [e]
-                                          (println "hello"))}
+                               :onClick (fn [e] (println "hello"))}
                           "Hello?")
 
               (println "circles:" (:circles cursor))
@@ -115,8 +114,7 @@
               (om/build animator
                         (:circles cursor)
                         {:state {:start-time (.now (.-performance js/window))}
-                         :opts {:stop? fading-circle-stop?
-                                :update fading-circle-update}
+                         :opts {:update fading-circle-update}
                          :fn #(make-animations (.-value %))})))
 
 

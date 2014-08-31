@@ -43,13 +43,13 @@
 
 
 (defn animator
-  [animations owner {:keys [stop? update] :as opts}]
+  [animations owner {:keys [update] :as opts}]
   (reify
     om/IInitState
     (init-state
      [this]
      {:clock (clock 10)})
-    ;; :start-time must be injected
+   ;; :start-time must be injected
 
     om/IWillMount
     (will-mount
@@ -65,11 +65,10 @@
     (render-state
      [_ {:keys [elapsed-time] :as state}]
      (doseq [index (range (count animations))]
-       (let [animation (nth animations index)]
-         (when-not (stop? elapsed-time animation)
-           (let [canvas (get-canvas index)]
-             (when canvas ;; who knows exactly when it mounts
-               (update elapsed-time canvas animation))))))
+       (let [animation (nth animations index)
+             canvas (get-canvas index)]
+         (when canvas ;; who knows exactly when it mounts
+           (update elapsed-time canvas animation))))
 
      (apply dom/div #js {}
             (map (fn [index] (dom/canvas (canvas-props index)))
