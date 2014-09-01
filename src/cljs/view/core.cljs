@@ -29,8 +29,8 @@
           :line-width 2
           :scale 1
           :color (nth palette index)
-          :duration 250
-          :delay (* 200 index)}))
+          :duration 750
+          :delay (* 650 index)}))
 
 (defn make-animations
   [circles]
@@ -73,7 +73,7 @@
 
     om/IRender
     (render
-     [this]
+     [_]
 
      (dom/div #js {:width "800px" :height "500px"
                    :style #js {:width "800px" :height "500px"}}
