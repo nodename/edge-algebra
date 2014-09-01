@@ -56,18 +56,30 @@
       (set-org! org)
       (set-dest! dest)))
 
+(defn show-ring
+  [edge]
+  (loop [e (o-next edge)
+         i 0]
+    (println e (verts e))
+    (when-not (= i 4)
+      (recur (o-next e) (inc i)))))
+
 
 (defn connect!
   [a b]
+  (println "connect!: connecting" (verts a) "-->>" (verts b))
   (let [e (make-d-edge! (dest a) (org b))]
     (splice! e (l-next a))
     (splice! (sym e) b)
+    (println "o-next sym e:" (o-next (sym e)) (verts (o-next (sym e))))
+    (show-ring e)
     e))
 
 (defn delete-edge!
   [e]
   (splice! e (o-prev e))
   (splice! (sym e) (o-prev (sym e)))
+  (println "removing " (verts e))
   (remove-edge-record! e))
 
 
@@ -97,11 +109,15 @@
 
 (defn right-of?
   [point edge]
-  (ccw? point (dest edge) (org edge)))
+  (let [result (ccw? point (dest edge) (org edge))]
+    (println "right-of?" point (verts edge) result)
+    result))
 
 (defn left-of?
   [point edge]
-  (ccw? point (org edge) (dest edge)))
+  (let [result (ccw? point (org edge) (dest edge))]
+    (println "left-of?" point (verts edge) result)
+    result))
 
 
 (defn sort-xy
@@ -134,21 +150,21 @@
   [edge cross-edge]
   (right-of? (dest edge) cross-edge))
 
+
 (defn bubble-left!
   "Locate the first l point (dest l-candidate) to be encountered by the rising bubble,
    and delete any l edges coming out of (dest cross-edge) that fail the circle test.
    Return the left candidate edge."
   [cross-edge]
- ; (println)
-  ;; This o-prev is o-next in the paper; they are using the simplified edge-algebra
-  ;; for orientable manifolds. Since we are using the full version, (sym cross-edge) is
-  ;; oppositely oriented and we must use o-prev instead:
-  (let [initial-edge (o-prev (sym cross-edge))]
-   ; (println "bubble-left: " (verts initial-edge))
+  (println "bubble-left entering cross-edge:" cross-edge (verts cross-edge))
+  (println "sym:" (sym cross-edge) (verts (sym cross-edge)))
+  (println "o-next:" (o-next (sym cross-edge)) (verts (o-next (sym cross-edge))))
+  (let [initial-edge (o-next (sym cross-edge))]
+    (println "bubble-left initial edge:" (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
-      (do ; (println "bubble-left: dest is above cross-edge")
+      (do  (println "bubble-left: dest is above cross-edge")
       (loop [edge initial-edge]
-       ; (println "bubble-left: " (verts edge))
+        (println "bubble-left: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-next edge)))
           (recur (slide-left! edge))
@@ -158,18 +174,30 @@
 (defn bubble-right!
   "Symmetrically to bubble-left!, return the right candidate edge."
   [cross-edge]
-;  (println)
+  (println)
   (let [initial-edge (o-prev cross-edge)]
-  ;  (println "bubble-right: " (verts initial-edge))
+    (println "bubble-right initial edge: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
-      (do ; (println "bubble-right: dest is above cross-edge")
+      (do  (println "bubble-right: dest is above cross-edge")
       (loop [edge initial-edge]
-       ; (println "bubble-right: " (verts edge))
+        (println "bubble-right: " (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-prev edge)))
           (recur (slide-right! edge))
           edge)))
       initial-edge)))
+
+(defn lower-common-tangent
+  [ldi rdi]
+  ;; This calculation is given incorrectly in the paper, with an ELSIF!
+  (let [ldi (if (left-of? (org rdi) ldi)
+                  (l-next ldi)
+                  ldi)
+        rdi (if (right-of? (org ldi) rdi)
+                  (r-prev rdi)
+                  rdi)]
+    [ldi rdi]))
+
 
 (defn delaunay
   "Calculate the Delaunay triangulation of the sites; return
@@ -178,8 +206,6 @@
   [sites]
   (let [sites (vec (distinct sites))]
     (condp = (count sites)
-      1 nil
-
       2 (let [a (make-d-edge! (sites 0) (sites 1))]
           [a (sym a)])
 
@@ -201,17 +227,21 @@
       ;; The default case, four or more sites: divide and conquer
       ;;
       (let [[l r] (halves sites)
+            _ (println)
+            _ (println "l:" l)
+            _ (println "r:" r)
             [ldo ldi] (delaunay l)
             [rdi rdo] (delaunay r)
+            _ (println "ldo:" (verts ldo) "ldi:" (verts ldi))
+            _ (println "rdo:" (verts rdo) "rdi:" (verts rdi))
             ;; Compute the lower common tangent [ldi rdi] of l and r:
-            [ldi rdi] (cond
-                       (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
-                       (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
-                       :else                     [ldi rdi])
+            [ldi rdi] (lower-common-tangent ldi rdi)
+            _ (println "lower common tangent:" (verts ldi) (verts rdi))
             ;;
             ;; Create initial-cross-edge from (org rdi) to (org ldi)
             ;; (Note that we always choose the right-to-left direction for a cross-edge):
             initial-cross-edge (connect! (sym rdi) ldi)
+            _ (println "initial cross edge:" (verts initial-cross-edge))
             ldo (if (= (org ldi) (org ldo))
                   (sym initial-cross-edge)
                   ldo)
@@ -222,17 +252,17 @@
           ;; This is the merge loop:
           ;;
           (loop [cross-edge initial-cross-edge]
-          ;  (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
+            (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
             (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
-                ;  _ (println)
-                ;  _ (println "candidates: l: " (verts l-candidate)
-                ;             " r: " (verts r-candidate))
+                  _ (println)
+                  _ (println "candidates: l: " (verts l-candidate)
+                             " r: " (verts r-candidate))
                   ;;
                   dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
 
-          ;    (println "l-cand above? " (dest-above-cross-edge? l-candidate))
-          ;    (println "r-cand above? " (dest-above-cross-edge? r-candidate))
+              (println "l-cand above? " (dest-above-cross-edge? l-candidate))
+              (println "r-cand above? " (dest-above-cross-edge? r-candidate))
               ;;
               ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
               ;; then cross-edge is the upper common tangent and we're done.

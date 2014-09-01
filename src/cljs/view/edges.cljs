@@ -16,7 +16,7 @@
   [canvas edge-records]
   (let [context (.getContext canvas "2d")
         line-width 2
-        scale 200
+        scale 1
         line-color {:r 255 :g 0 :b 0}]
     (.clearRect context 0 0 (.-width (.-canvas context)) (.-height (.-canvas context)))
     (doseq [edge-record edge-records]

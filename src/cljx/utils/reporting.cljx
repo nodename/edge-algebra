@@ -1,6 +1,4 @@
-(ns delaunay.utils.reporting
-  (:require [delaunay.div-conq :as dq]
-            [#+clj clojure.core.async #+cljs cljs.core.async :refer [put!]]))
+(ns utils.reporting)
 
 
 #+clj
@@ -30,18 +28,3 @@
       keyword))
 
 
-(defn wrap-with-name-and-args-reporting
-  "Return a function which will put the symbol
-  and current args of f onto ch before invoking f."
-  [ch f]
-  (fn [& args]
-    (put! ch (vec (concat [(get-fn-name f)] args)))
-    (apply f args)))
-
-
-(defn with-reporting
-  [ch f & [args]]
-  (with-redefs [dq/make-d-edge! (wrap-with-name-and-args-reporting ch dq/make-d-edge!)
-                dq/delete-edge! (wrap-with-name-and-args-reporting ch dq/delete-edge!)
-                dq/in-circle? (wrap-with-name-and-args-reporting ch dq/in-circle?)]
-    (f args)))

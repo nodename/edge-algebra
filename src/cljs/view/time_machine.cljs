@@ -1,7 +1,9 @@
 (ns view.time-machine
-	(:require [edge-algebra.app-state :refer [app-state]]))
+	(:require [edge-algebra.app-state :refer [app-state]]
+            [view.clock :refer [clock]])
+  (:require-macros [cljs.core.async.macros :refer [go]]))
 
-;; Copied from goya.
+;; Mostly copied from goya.
 ;; =============================================================================
 ;; Credits to David Nolen's Time Travel blog post.
 
@@ -46,14 +48,25 @@
   (when (undo-is-possible)
     (swap! app-future conj (last @app-history))
     (swap! app-history pop)
-    (reset! app-state (last @app-history))
-    (println "do-undo:" (count (:circles @app-state)) "circles")))
+    (reset! app-state (last @app-history))))
 
 (defn do-redo []
   (when (redo-is-possible)
     (reset! app-state (last @app-future))
     (push-onto-undo-stack (last @app-future))
     (swap! app-future pop)))
+
+(defn do-rewind []
+  (while (do-undo)))
+
+(defn do-end []
+  (while (do-redo)))
+
+(defn do-play []
+  (let [[clock] (clock 500)]
+    (go (while (do
+                 (<! clock)
+                 (do-redo))))))
 
 
 (defn handle-transaction [tx-data root-cursor]
