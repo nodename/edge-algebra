@@ -1,8 +1,12 @@
 (ns edge-algebra.app-state
-  #+cljs (:require [om.core :as om :include-macros true]))
+  (:require [utils.reporting :refer [get-fn-name]]
+     #+cljs [om.core :as om :include-macros true]))
 
-(def app-state (atom {:edge-records []
-                      :circles []}))
+(def initial-state {:edge-records []
+                    :circles []
+                    :messages []})
+
+(def app-state (atom initial-state))
 
 #+cljs
 (def cursor (atom nil))
@@ -23,11 +27,13 @@
 
 ;; Mutators:
 
+
 #+cljs
 (defn add-to-undo!
   "Add a marker transaction to the undo list for the current cursor state."
   []
   (om/transact! @cursor [] (constantly @app-state) :add-to-undo))
+
 
 #+cljs
 (defn wrap-with-undo
@@ -36,7 +42,6 @@
   [f]
   (fn [& args]
     (let [val (apply f args)]
-      (println "Adding to undo")
       (add-to-undo!)
       val)))
 
@@ -44,6 +49,10 @@
   [path value]
   #+clj (swap! app-state assoc-in path value)
   #+cljs (om/transact! @cursor path (constantly value)))
+
+(defn reset-state!
+  []
+  (update! [] initial-state))
 
 
 (defn add-edge-record!
@@ -53,7 +62,6 @@
 
 (defn add-circle!
   [c]
-  (println "Adding a circle")
   #+clj (swap! app-state update-in [:circles] conj c)
   #+cljs (om/transact! @cursor [:circles] #(conj % c)))
 
@@ -63,23 +71,69 @@
 
 (defn wrap-with-add-circle
   "Return a function that will add the args of f to :circles
-  before invoking f."
-  [f]
+  before/after invoking f."
+  [when f]
   (fn [& args]
-    (add-circle! args)
-    (println "Add:" (count (:circles @app-state)))
-    (apply f args)))
+    (condp = when
+      :before (do
+                (add-circle! args)
+                (apply f args))
+      :after (let [val (apply f args)]
+               (add-circle! args)
+               val))))
 
 (defn wrap-with-clear-circles
-  "Return a function that will reset :circles after invoking f."
+  "Return a function that will reset :circles before/after invoking f."
+  [when f]
+  (fn [& args]
+    (condp = when
+      :before (do
+                (clear-circles!)
+                (apply f args))
+      :after (let [val (apply f args)]
+               (clear-circles!)
+               val))))
+
+(defn add-message!
+  [args]
+  #+clj (swap! app-state update-in [:messages] conj args)
+  #+cljs (om/transact! @cursor [:messages] #(conj % args)))
+
+(defn clear-messages!
+  []
+  (update! [:messages] []))
+
+(defn wrap-with-add-message
+  "Return a function that will add the args of f to :messages
+  after invoking f."
   [f]
   (fn [& args]
     (let [val (apply f args)]
-      (println "Clearing circles")
-      (clear-circles!)
+      (add-message! args)
       val)))
 
+(defn replace-with-add-message
+  "Return a function that will add the args of f to :messages
+  instead of invoking f."
+  [f]
+  (fn [& args]
+    (add-message! args)))
 
+(defn wrap-with-name-and-args-reporting
+  "Return a function that will add the symbol
+  and current args of f to :messages before invoking f."
+  [f]
+  (fn [& args]
+    (add-message! (vec (concat [(get-fn-name f)] args)))
+    (apply f args)))
+
+(defn wrap-with-clear-messages
+  "Return a function that will reset :messages after invoking f."
+  [f]
+  (fn [& args]
+    (let [val (apply f args)]
+      (clear-messages!)
+      val)))
 
 
 (defn remove-edge-record!
