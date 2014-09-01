@@ -66,25 +66,33 @@
   #+cljs (om/transact! @cursor [:circles] #(conj % c)))
 
 (defn clear-circles!
-  []
+  [& _]
   (update! [:circles] []))
+
+(defn wrap-before
+  [f aux]
+  (fn [& args]
+    (do
+      (aux args)
+      (apply f args))))
+
+(defn wrap-after
+  [f aux]
+  (fn [& args]
+    (let [val (apply f args)]
+      (aux args)
+      val)))
 
 (defn wrap-with-add-circle
   "Return a function that will add the args of f to :circles
   before invoking f."
   [f]
-  (fn [& args]
-    (do
-      (add-circle! args)
-      (apply f args))))
+  (wrap-before f add-circle!))
 
 (defn wrap-with-clear-circles
   "Return a function that will reset :circles after invoking f."
   [f]
-  (fn [& args]
-    (let [val (apply f args)]
-      (clear-circles!)
-      val)))
+  (wrap-after f clear-circles!))
 
 (defn add-message!
   [args]
@@ -99,10 +107,7 @@
   "Return a function that will add the args of f to :messages
   after invoking f."
   [f]
-  (fn [& args]
-    (let [val (apply f args)]
-      (add-message! args)
-      val)))
+  (wrap-after f add-message!))
 
 (defn replace-with-add-message
   "Return a function that will add the args of f to :messages
@@ -112,12 +117,28 @@
     (add-message! args)))
 
 (defn wrap-with-name-and-args-reporting
-  "Return a function that will add the symbol
-  and current args of f to :messages before invoking f."
+  "Return a function that will add the name
+  and current args of f to :messages before invoking f,
+  and the name and return value after."
   [f]
   (fn [& args]
-    (add-message! (vec (concat [(get-fn-name f)] args)))
-    (apply f args)))
+    (let [fn-name (get-fn-name f)]
+      (add-message! (vec (concat [fn-name] args)))
+      (let [val (apply f args)]
+       #_(add-message! (vec (concat [fn-name] args [val]))) ;; !! this causes an error!
+        val))))
+
+
+(defn wrap-with-add-circle-and-reporting
+  "Return a function that will add the args of f to :circles
+  before invoking f."
+  [f]
+  (fn [& args]
+    (do
+      (add-circle! args)
+
+      (apply f args))))
+
 
 (defn wrap-with-clear-messages
   "Return a function that will reset :messages after invoking f."

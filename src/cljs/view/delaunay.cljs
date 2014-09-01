@@ -3,7 +3,6 @@
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [<! chan]]
             [delaunay.div-conq :as dq :refer [pt delaunay]]
-            [delaunay.utils.circle :refer [center-and-radius]]
             [edge-algebra.app-state :as app-state :refer [set-cursor!
                                                           wrap-with-undo
                                                           wrap-with-add-circle
@@ -12,32 +11,28 @@
                                                           replace-with-add-message
                                                           wrap-with-name-and-args-reporting
                                                           wrap-with-clear-messages
-                                                          reset-state!]]
-            [view.edges :refer [render-edges]]
-            [view.fading-circle :refer [fading-circle-update]]
-            [view.animator :refer [animator]]
-            [view.time-machine :as time-machine :refer [handle-transaction
-                                                        do-undo do-redo do-play
-                                                        do-rewind do-end]])
-  (:require-macros [cljs.core.async.macros :refer [go-loop]]))
+                                                          reset-state!]]))
 
 
-(defn with-undo
+(defn with-decorations
   [f & [args]]
   (with-redefs [edge-algebra.core/splice! (wrap-with-name-and-args-reporting
                                            edge-algebra.core/splice!)
                 dq/make-d-edge! (wrap-with-clear-messages
                                  (wrap-with-clear-circles
-                                 (wrap-with-undo
-                                  (wrap-with-name-and-args-reporting
-                                  dq/make-d-edge!))))
+                                  (wrap-with-undo
+                                   (wrap-with-name-and-args-reporting
+                                    dq/make-d-edge!))))
                 dq/delete-edge! (wrap-with-clear-messages
                                  (wrap-with-clear-circles
-                                 (wrap-with-undo
-                                  (wrap-with-name-and-args-reporting
-                                  dq/delete-edge!))))
-                dq/in-circle? (wrap-with-add-circle dq/in-circle?)
-                println (replace-with-add-message println)]
+                                  (wrap-with-undo
+                                   (wrap-with-name-and-args-reporting
+                                    dq/delete-edge!))))
+                dq/in-circle? (wrap-with-add-circle
+                               (wrap-with-name-and-args-reporting
+                                dq/in-circle?))
+                println (replace-with-add-message
+                         println)]
     (f args)))
 
 
@@ -56,7 +51,7 @@
         d (pt 2 0)
         e (pt 3 1)
         f (pt 4 0)]
-    (with-undo delaunay [a b c d e f])))
+    (with-decorations delaunay [a b c d e f])))
 
 (defn run-delaunay
   []
@@ -71,4 +66,4 @@
        ; sites [(pt 41 66) (pt 370 328) (pt 664 82) (pt 774 53)]
         ]
     (println sites)
-    (with-undo delaunay sites)))
+    (with-decorations delaunay sites)))

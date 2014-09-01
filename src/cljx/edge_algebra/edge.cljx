@@ -53,7 +53,24 @@
          f (:f edge)]
      (get-edge (get-edge-record edge) r f))))
 
+(defn orientable-rot
+  ([edge] (rot 1 edge))
+  ([exponent edge]
+   (let [r (+ (:r edge) exponent)
+         f (:f edge)]
+     (get-edge (get-edge-record edge) r f))))
+
 (defn sym
+  "return the symmetric QuadEdge: the one with same orientation and opposite direction"
+  ([edge] (sym 1 edge))
+  ([exponent edge]
+  ; (println "SYM: input r f: " (:r edge) " " (:f edge))
+   (let [r (+ (:r edge) (* 2 exponent))
+         f (:f edge)]
+   ;  (println "SYM: new r f: " r " " f)
+     (get-edge (get-edge-record edge) r f))))
+
+(defn orientable-sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
   ([edge] (sym 1 edge))
   ([exponent edge]
@@ -84,7 +101,7 @@
 ;; counterclockwise in the ring of edges out of originVertex:
 (defn ^:private onext [edge]
   (get-edge (get-edge-record (:next edge))
-                                       (:r (:next edge)) (:f (:next edge))))
+            (:r (:next edge)) (:f (:next edge))))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:

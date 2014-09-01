@@ -20,6 +20,8 @@
 ;; An alias for the 2-D point constructor:
 (def pt vec2)
 
+#_(def sym orientable-sym)
+
 
 ;; For the Delaunay application, the data field of an Edge
 ;; will contain the coordinates of its origin:
@@ -57,27 +59,32 @@
       (set-dest! dest)))
 
 (defn show-ring
-  [edge]
-  (loop [e (o-next edge)
+  [f edge]
+  (loop [e edge
          i 0]
-    (println e (verts e))
-    (when-not (= i 4)
-      (recur (o-next e) (inc i)))))
+    (when e
+      (println (utils.reporting/get-fn-name f) e (verts e))
+      (when-not (= i 10)
+        (recur (f e) (inc i))))))
 
 
 (defn connect!
   [a b]
   (println "connect!: connecting" (verts a) "-->>" (verts b))
   (let [e (make-d-edge! (dest a) (org b))]
+    (println "Splicing" (verts e) (verts (l-next a)))
     (splice! e (l-next a))
+    (println "Splicing" (verts (sym e)) (verts b))
     (splice! (sym e) b)
     (println "o-next sym e:" (o-next (sym e)) (verts (o-next (sym e))))
-    (show-ring e)
+    (show-ring o-next e)
     e))
 
 (defn delete-edge!
   [e]
+  (println "Splicing" (verts e) (verts (o-prev e)))
   (splice! e (o-prev e))
+  (println "Splicing" (verts (sym e)) (verts (o-prev (sym e))))
   (splice! (sym e) (o-prev (sym e)))
   (println "removing " (verts e))
   (remove-edge-record! e))
@@ -95,7 +102,6 @@
                          (.-x b) (.-y b) (#+clj .mag-squared #+cljs g/mag-squared b) 1
                          (.-x c) (.-y c) (#+clj .mag-squared #+cljs g/mag-squared c) 1
                          (.-x d) (.-y d) (#+clj .mag-squared #+cljs g/mag-squared d) 1)]
-
     (> #+clj (.determinant matrix)
        #+cljs (.call thi.ng.geom.core.matrix.Matrix44.prototype.thi$ng$geom$core$PDeterminant$determinant$arity$1 matrix)
        0)))
@@ -135,12 +141,14 @@
 (defn slide-left!
   [edge]
   (let [t (o-next edge)]
+    (println "slide-left:" (verts t))
     (delete-edge! edge)
     t))
 
 (defn slide-right!
   [edge]
   (let [t (o-prev edge)]
+    (println "slide-right:" (verts t))
     (delete-edge! edge)
     t))
 
@@ -157,14 +165,14 @@
    Return the left candidate edge."
   [cross-edge]
   (println "bubble-left entering cross-edge:" cross-edge (verts cross-edge))
-  (println "sym:" (sym cross-edge) (verts (sym cross-edge)))
-  (println "o-next:" (o-next (sym cross-edge)) (verts (o-next (sym cross-edge))))
+  #_(println "sym:" (sym cross-edge) (verts (sym cross-edge)))
+  #_(println "o-next:" (o-next (sym cross-edge)) (verts (o-next (sym cross-edge))))
   (let [initial-edge (o-next (sym cross-edge))]
     (println "bubble-left initial edge:" (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
       (do  (println "bubble-left: dest is above cross-edge")
       (loop [edge initial-edge]
-        (println "bubble-left: " (verts edge))
+        (println "bubble-left: edge:" (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-next edge)))
           (recur (slide-left! edge))
@@ -180,7 +188,7 @@
     (if (dest-above? initial-edge cross-edge)
       (do  (println "bubble-right: dest is above cross-edge")
       (loop [edge initial-edge]
-        (println "bubble-right: " (verts edge))
+        (println "bubble-right: edge:" (verts edge))
         (if (in-circle? (dest cross-edge) (org cross-edge) (dest edge)
                         (dest (o-prev edge)))
           (recur (slide-right! edge))
@@ -212,6 +220,7 @@
       3 (let [[s1 s2 s3] (sort-xy sites)
               a (make-d-edge! s1 s2)
               b (make-d-edge! s2 s3)]
+          (println "Splicing" (verts (sym a)) (verts b))
           (splice! (sym a) b)
           ;; Now close the triangle:
           (cond
@@ -268,7 +277,9 @@
               ;; then cross-edge is the upper common tangent and we're done.
               ;;
               ;; Otherwise:
-              (when (or (dest-above-cross-edge? l-candidate) (dest-above-cross-edge? r-candidate))
+              (if (or (dest-above-cross-edge? l-candidate)
+                      (dest-above-cross-edge? r-candidate))
+                (do
                 ;; The next cross edge is to be connected to either
                 ;; (dest l-candidate) or (dest r-candidate).
                 ;; If both dests are above cross-edge,
@@ -280,6 +291,7 @@
                   ;; Add new cross edge from (dest r-candidate) to (dest cross-edge):
                   (recur (connect! r-candidate (sym cross-edge)))
                   ;; Else add new cross edge from (org cross-edge) to (dest l-candidate):
-                  (recur (connect! (sym cross-edge) (sym l-candidate)))))))
+                  (recur (connect! (sym cross-edge) (sym l-candidate)))))
+                (println "Done at upper common tangent"))))
 
         [ldo rdo]))))
