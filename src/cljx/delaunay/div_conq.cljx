@@ -133,9 +133,8 @@
 
 (defn halves
   [seq]
-  (let [half-way (/ (count seq) 2)
-        sorted-seq (sort-xy seq)]
-    (map vec (split-at half-way sorted-seq))))
+  (let [half-way (/ (count seq) 2)]
+    (map vec (split-at half-way seq))))
 
 
 (defn slide-left!
@@ -207,17 +206,18 @@
     [ldi rdi]))
 
 
-(defn delaunay
+(defn delaunay'
   "Calculate the Delaunay triangulation of the sites; return
    the counterclockwise convex hull edge out of the leftmost vertex
-   and the clockwise convex hull edge out of the rightmost vertex."
+   and the clockwise convex hull edge out of the rightmost vertex.
+  Assume the sites are sorted."
   [sites]
-  (let [sites (vec (distinct sites))]
-    (condp = (count sites)
-      2 (let [a (make-d-edge! (sites 0) (sites 1))]
+  (condp = (count sites)
+      2 (let [[s1 s2] sites
+              a (make-d-edge! s1 s2)]
           [a (sym a)])
 
-      3 (let [[s1 s2 s3] (sort-xy sites)
+      3 (let [[s1 s2 s3] sites
               a (make-d-edge! s1 s2)
               b (make-d-edge! s2 s3)]
           (println "Splicing" (verts (sym a)) (verts b))
@@ -239,8 +239,8 @@
             _ (println)
             _ (println "l:" l)
             _ (println "r:" r)
-            [ldo ldi] (delaunay l)
-            [rdi rdo] (delaunay r)
+            [ldo ldi] (delaunay' l)
+            [rdi rdo] (delaunay' r)
             _ (println "ldo:" (verts ldo) "ldi:" (verts ldi))
             _ (println "rdo:" (verts rdo) "rdi:" (verts rdi))
             ;; Compute the lower common tangent [ldi rdi] of l and r:
@@ -294,4 +294,10 @@
                   (recur (connect! (sym cross-edge) (sym l-candidate)))))
                 (println "Done at upper common tangent"))))
 
-        [ldo rdo]))))
+        [ldo rdo])))
+
+(defn delaunay
+  "Run delaunay' on sorted sites with no duplicates.
+  This makes all future splittings constant-time operations."
+  [sites]
+  (delaunay' (sort-xy (vec (distinct sites)))))
