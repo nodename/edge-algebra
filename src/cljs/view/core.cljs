@@ -20,9 +20,12 @@
 
 (defn with-undo
   [f & [args]]
-  (with-redefs [dq/make-d-edge! (wrap-with-clear-circles (wrap-with-undo dq/make-d-edge!))
-                dq/delete-edge! (wrap-with-clear-circles (wrap-with-undo dq/delete-edge!))
-                dq/in-circle? (wrap-with-add-circle dq/in-circle?)]
+  (with-redefs [dq/make-d-edge! (wrap-with-clear-circles
+                                 (wrap-with-undo dq/make-d-edge!))
+                dq/delete-edge! (wrap-with-clear-circles
+                                 (wrap-with-undo dq/delete-edge!))
+                dq/in-circle? (wrap-with-add-circle
+                               dq/in-circle?)]
     (f args)))
 
 

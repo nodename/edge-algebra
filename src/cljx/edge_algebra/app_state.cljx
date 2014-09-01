@@ -71,28 +71,20 @@
 
 (defn wrap-with-add-circle
   "Return a function that will add the args of f to :circles
-  before/after invoking f."
-  [when f]
+  before invoking f."
+  [f]
   (fn [& args]
-    (condp = when
-      :before (do
-                (add-circle! args)
-                (apply f args))
-      :after (let [val (apply f args)]
-               (add-circle! args)
-               val))))
+    (do
+      (add-circle! args)
+      (apply f args))))
 
 (defn wrap-with-clear-circles
-  "Return a function that will reset :circles before/after invoking f."
-  [when f]
+  "Return a function that will reset :circles after invoking f."
+  [f]
   (fn [& args]
-    (condp = when
-      :before (do
-                (clear-circles!)
-                (apply f args))
-      :after (let [val (apply f args)]
-               (clear-circles!)
-               val))))
+    (let [val (apply f args)]
+      (clear-circles!)
+      val)))
 
 (defn add-message!
   [args]
