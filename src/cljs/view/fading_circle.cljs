@@ -28,5 +28,5 @@
       (.clearRect context 0 0 (.-width canvas) (.-height canvas))
       (draw-circle context center radius line-width scale
                    (merge color {:a a}))
-      (draw-circle context dot (/ 6 scale) line-width scale
+      (draw-circle context dot 5 line-width scale
                    (merge color {:a a})))))
