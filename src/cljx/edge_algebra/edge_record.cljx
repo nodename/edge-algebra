@@ -1,5 +1,6 @@
 (ns edge-algebra.edge-record
-  (:require [edge-algebra.app-state :refer [next-er-index add-edge-record!]]
+  (:require [edge-algebra.app-state :refer [next-er-index]]
+            [edge-algebra.app-mutators :refer [add-edge-record!]]
             [edge-algebra.node :refer [new-node!]]
             [edge-algebra.edge :refer [new-edge!]]))
 

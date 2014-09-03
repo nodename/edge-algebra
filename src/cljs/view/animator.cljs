@@ -27,7 +27,7 @@
 
 (defn make-animations
   [circles]
-  (map make-animation circles (range)))
+  (vec (map make-animation circles (range))))
 ;;
 ;;;;  Animations  ;;;;
 
@@ -72,14 +72,15 @@
     om/IRenderState
     (render-state
      [_ {:keys [elapsed-time] :as state}]
-     (let [animations (make-animations (.-value circles))]
-     (doseq [index (range (count animations))]
-       (let [animation (nth animations index)
-             canvas (get-canvas index)]
-         (when canvas ;; who knows exactly when it mounts
-           (update elapsed-time canvas animation))))
+     (let [animations (make-animations (om/value circles))]
+       (doseq [index (range (count animations))]
+         (let [animation (nth animations index)
+               canvas (get-canvas index)]
+           (when canvas ;; who knows exactly when it mounts
+             (update elapsed-time canvas animation))))
 
      (apply dom/div #js {}
             (map (fn [index] (dom/canvas (canvas-props index)))
                  (range (count animations))))))))
+
 

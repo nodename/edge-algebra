@@ -3,7 +3,7 @@
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [<! chan]]
             [delaunay.div-conq :as dq :refer [pt delaunay]]
-            [edge-algebra.app-state :as app-state :refer [set-cursor!
+            [edge-algebra.app-mutators :refer [set-cursor!
                                                           wrap-with-undo
                                                           wrap-with-add-circle
                                                           wrap-with-clear-circles

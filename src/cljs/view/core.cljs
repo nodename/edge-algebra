@@ -2,7 +2,8 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [view.delaunay :refer [run-delaunay]]
-            [edge-algebra.app-state :as app-state :refer [set-cursor!]]
+            [edge-algebra.app-state :refer [app-state]]
+            [edge-algebra.app-mutators :refer [set-cursor!]]
             [view.edges :refer [render-edges]]
             [view.fading-circle :refer [fading-circle-update]]
             [view.animator :refer [animator]]
@@ -26,12 +27,12 @@
 (defn display-edges
   [owner cursor]
   (let [canvas (om/get-node owner "delaunay-canvas")]
-    (render-edges canvas (:edge-records (.-value cursor)))))
+    (render-edges canvas (:edge-records (om/value cursor)))))
 
 (defn print-messages
   [cursor]
   (println "-----------MESSAGES----------")
-  (doseq [msg (:messages (.-value cursor))]
+  (doseq [msg (:messages (om/value cursor))]
     (apply println msg))
   (println "-----------------------------"))
 
@@ -106,6 +107,6 @@
 
 (om/root
   delaunay-view
-  app-state/app-state
+  app-state
   {:target (. js/document (getElementById "delaunay"))
    :tx-listen handle-transaction})

@@ -5,7 +5,7 @@
    [edge-algebra.core :refer [make-edge! splice!]]
    ;;
    ;; application-specific mutators:
-   [edge-algebra.app-state :refer [set-data! set-sym-data! remove-edge-record!]]
+   [edge-algebra.app-mutators :refer [set-data! set-sym-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -303,5 +303,4 @@
   "Run delaunay' on sorted sites with no duplicates.
   This makes all future splittings constant-time operations."
   [sites]
-  (println "entering delaunay")
   (delaunay' (sort-xy (vec (distinct sites)))))
