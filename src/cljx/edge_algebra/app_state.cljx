@@ -1,5 +1,6 @@
 (ns edge-algebra.app-state
   (:require [utils.reporting :refer [get-fn-name]]
+            #_[edge-algebra.edge :refer [o-next sym]]
      #+cljs [om.core :as om :include-macros true]))
 
 (def initial-state {:edge-records []
@@ -24,6 +25,17 @@
   [edge-or-node]
   (let [er-index (:edge-record edge-or-node)]
     ((:edge-records @app-state) er-index)))
+
+#_
+(defn verts
+  [edge]
+  (str (:data edge) "->" (:data (sym edge))))
+#_
+(defn show-edge-records
+  []
+  (doseq [er (:edge-records @app-state)]
+    (doseq [e (:edges er)]
+      (println (verts e) (verts (o-next e))))))
 
 ;; Mutators:
 
@@ -158,6 +170,18 @@
     (update! path true)))
 
 
+(defn set-sym-data!
+  "Set sym edge's data. Return the calling edge."
+  [edge data]
+  (let [er-index (:edge-record edge)
+        r (:r edge)
+        sym-r (mod (+ 2 (:r edge)) 4)
+        f (:f edge)
+        path [:edge-records er-index :edges sym-r f :data]]
+    (update! path data)
+    (get-in @app-state [:edge-records er-index :edges r f])))
+
+
 (defn set-data!
   "Set edge's data. Return the updated edge."
   [edge data]
@@ -167,7 +191,6 @@
         path [:edge-records er-index :edges r f :data]]
     (update! path data)
     (get-in @app-state (vec (butlast path)))))
-
 
 (defn set-next!
   "Set edge's next. Return the updated edge."

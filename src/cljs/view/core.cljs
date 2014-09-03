@@ -2,7 +2,6 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [view.delaunay :refer [run-delaunay]]
-            [delaunay.utils.circle :refer [center-and-radius]]
             [edge-algebra.app-state :as app-state :refer [set-cursor!]]
             [view.edges :refer [render-edges]]
             [view.fading-circle :refer [fading-circle-update]]
@@ -12,31 +11,6 @@
                                                         do-rewind do-end]]))
 
 (enable-console-print!)
-
-
-;;;; Animations  ;;;;
-;;
-(def palette (cycle [{:r 138 :g 155 :b 15}
-                    {:r 0 :g 160 :b 176}
-                    {:r 204 :g 51 :b 63}
-                    {:r 235 :g 104 :b 65}
-                    {:r 237 :g 201 :b 81}]))
-
-(defn make-animation
-  [in-circle-args index]
-  (merge (apply center-and-radius (butlast in-circle-args))
-         {:dot (last in-circle-args)
-          :line-width 2
-          :scale 1
-          :color (nth palette index)
-          :duration 750
-          :delay (* 650 index)}))
-
-(defn make-animations
-  [circles]
-  (map make-animation circles (range)))
-;;
-;;;;  Animations  ;;;;
 
 
 (defn button-style
@@ -121,8 +95,7 @@
               (om/build animator
                         (:circles cursor)
                         {:state {:start-time (.now (.-performance js/window))}
-                         :opts {:update fading-circle-update}
-                         :fn #(make-animations (.-value %))})))
+                         :opts {:update fading-circle-update}})))
 
     om/IDidUpdate
     (did-update

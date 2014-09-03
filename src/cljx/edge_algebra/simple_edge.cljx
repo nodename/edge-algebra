@@ -1,5 +1,5 @@
-(ns edge-algebra.edge
-  (:require [edge-algebra.app-state :refer [get-edge-record]]
+(ns edge-algebra.simple-edge
+  (:require [edge-algebra.app-state :refer [ get-edge-record]]
             [edge-algebra.record :refer [get-node get-edge]]))
 
 
@@ -33,13 +33,13 @@
 
 (defn left-face
   [edge]
-  (let [r (+ (+ (:r edge) 2) (* 2 (:f edge)))
+  (let [r (+ (:r edge) 2)
         f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
 (defn right-face
   [edge]
-  (let [r (+ (:r edge) (* 2 (:f edge)))
+  (let [r (:r edge)
         f (:f edge)]
     (get-node (get-edge-record edge) r f)))
 
@@ -49,21 +49,11 @@
 (defn rot
   ([edge] (rot 1 edge))
   ([exponent edge]
-   (let [r (+ (:r edge) (* (+ 1 (* 2 (:f edge))) exponent))
+   (let [r (+ (:r edge) exponent)
          f (:f edge)]
      (get-edge (get-edge-record edge) r f))))
 
 (defn sym
-  "return the symmetric QuadEdge: the one with same orientation and opposite direction"
-  ([edge] (sym 1 edge))
-  ([exponent edge]
-  ; (println "SYM: input r f: " (:r edge) " " (:f edge))
-   (let [r (+ (:r edge) (* 2 exponent))
-         f (:f edge)]
-   ;  (println "SYM: new r f: " r " " f)
-     (get-edge (get-edge-record edge) r f))))
-
-(defn orientable-sym
   "return the symmetric QuadEdge: the one with same orientation and opposite direction"
   ([edge] (sym 1 edge))
   ([exponent edge]
@@ -78,7 +68,7 @@
   ([edge] (flip 1 edge))
   ([exponent edge]
    (let [r (:r edge)
-         f (+ (:f edge) exponent)]
+         f (:f edge)]
      (get-edge (get-edge-record edge) r f))))
 
 

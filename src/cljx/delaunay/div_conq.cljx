@@ -5,7 +5,7 @@
    [edge-algebra.core :refer [make-edge! splice!]]
    ;;
    ;; application-specific mutators:
-   [edge-algebra.app-state :refer [set-data! remove-edge-record!]]
+   [edge-algebra.app-state :refer [set-data! set-sym-data! remove-edge-record!]]
    ;;
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :as e :refer [sym o-next o-prev l-next r-prev]]
@@ -19,8 +19,6 @@
 
 ;; An alias for the 2-D point constructor:
 (def pt vec2)
-
-#_(def sym orientable-sym)
 
 
 ;; For the Delaunay application, the data field of an Edge
@@ -41,9 +39,7 @@
 
 (defn set-dest!
   [edge coords]
-  (set-data! (sym edge) coords)
-  ;; previous line returns (sym edge) ha ha, so:
-  edge)
+  (set-sym-data! edge coords))
 
 
 (defn verts
@@ -63,7 +59,7 @@
   (loop [e edge
          i 0]
     (when e
-      (println (utils.reporting/get-fn-name f) e (verts e))
+      (println e (verts e))
       (when-not (= i 10)
         (recur (f e) (inc i))))))
 
@@ -72,19 +68,19 @@
   [a b]
   (println "connect!: connecting" (verts a) "-->>" (verts b))
   (let [e (make-d-edge! (dest a) (org b))]
-    (println "Splicing" (verts e) (verts (l-next a)))
+    (println "connect: first splice" (verts e) (verts (l-next a)))
     (splice! e (l-next a))
-    (println "Splicing" (verts (sym e)) (verts b))
+    (println "connect: second splice" (verts (sym e)) (verts b))
     (splice! (sym e) b)
     (println "o-next sym e:" (o-next (sym e)) (verts (o-next (sym e))))
-    (show-ring o-next e)
+    #_(show-edge-records)
     e))
 
 (defn delete-edge!
   [e]
-  (println "Splicing" (verts e) (verts (o-prev e)))
+  (println "delete-edge: Splicing" (verts e) (verts (o-prev e)))
   (splice! e (o-prev e))
-  (println "Splicing" (verts (sym e)) (verts (o-prev (sym e))))
+  (println "delete-edge: Splicing" (verts (sym e)) (verts (o-prev (sym e))))
   (splice! (sym e) (o-prev (sym e)))
   (println "removing " (verts e))
   (remove-edge-record! e))
@@ -166,6 +162,9 @@
   (println "bubble-left entering cross-edge:" cross-edge (verts cross-edge))
   #_(println "sym:" (sym cross-edge) (verts (sym cross-edge)))
   #_(println "o-next:" (o-next (sym cross-edge)) (verts (o-next (sym cross-edge))))
+
+  (println "bubble-left: (sym cross-edge)'s o-next ring:")
+  (show-ring o-next (sym cross-edge))
   (let [initial-edge (o-next (sym cross-edge))]
     (println "bubble-left initial edge:" (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
@@ -181,7 +180,8 @@
 (defn bubble-right!
   "Symmetrically to bubble-left!, return the right candidate edge."
   [cross-edge]
-  (println)
+  (println "bubble-right: cross-edge's o-next ring:")
+  (show-ring o-next cross-edge)
   (let [initial-edge (o-prev cross-edge)]
     (println "bubble-right initial edge: " (verts initial-edge))
     (if (dest-above? initial-edge cross-edge)
@@ -197,12 +197,13 @@
 (defn lower-common-tangent
   [ldi rdi]
   ;; This calculation is given incorrectly in the paper, with an ELSIF!
-  (let [ldi (if (left-of? (org rdi) ldi)
-                  (l-next ldi)
-                  ldi)
-        rdi (if (right-of? (org ldi) rdi)
-                  (r-prev rdi)
-                  rdi)]
+  ;; Or IS IT?
+  (println "lower-common-tangent in: ldi:" (verts ldi) "rdi:" (verts rdi))
+  (let [[ldi rdi] (cond
+                   (left-of? (org rdi) ldi)  [(l-next ldi) rdi]
+                   (right-of? (org ldi) rdi) [ldi (r-prev rdi)]
+                   :else [ldi rdi])]
+    (println "lower-common-tangent out: ldi:" (verts ldi) "rdi:" (verts rdi))
     [ldi rdi]))
 
 
@@ -220,7 +221,7 @@
       3 (let [[s1 s2 s3] sites
               a (make-d-edge! s1 s2)
               b (make-d-edge! s2 s3)]
-          (println "Splicing" (verts (sym a)) (verts b))
+          (println "triangle: Splicing" (verts (sym a)) (verts b))
           (splice! (sym a) b)
           ;; Now close the triangle:
           (cond
@@ -229,6 +230,7 @@
                              [a (sym b)])
            (ccw? s1 s3 s2) (do
                              (let [c (connect! b a)]
+                               (println "triangle returning" (verts (sym c)) (verts c))
                                [(sym c) c]))
            ;; Otherwise the three points are collinear:
            :else [a (sym b)]))
@@ -245,10 +247,11 @@
             _ (println "rdo:" (verts rdo) "rdi:" (verts rdi))
             ;; Compute the lower common tangent [ldi rdi] of l and r:
             [ldi rdi] (lower-common-tangent ldi rdi)
-            _ (println "lower common tangent:" (verts ldi) (verts rdi))
+            _ (println "lower common tangent (ldi rdi):" (verts ldi) (verts rdi))
             ;;
             ;; Create initial-cross-edge from (org rdi) to (org ldi)
             ;; (Note that we always choose the right-to-left direction for a cross-edge):
+            ;; Here's where we go wrong. ldi? How about (o-next ldi)? Nah
             initial-cross-edge (connect! (sym rdi) ldi)
             _ (println "initial cross edge:" (verts initial-cross-edge))
             ldo (if (= (org ldi) (org ldo))
@@ -261,7 +264,7 @@
           ;; This is the merge loop:
           ;;
           (loop [cross-edge initial-cross-edge]
-            (println "cross-edge: " (org cross-edge) " " (dest cross-edge))
+            (println "cross-edge: " (verts cross-edge))
             (let [l-candidate (bubble-left! cross-edge)
                   r-candidate (bubble-right! cross-edge)
                   _ (println)
@@ -300,4 +303,5 @@
   "Run delaunay' on sorted sites with no duplicates.
   This makes all future splittings constant-time operations."
   [sites]
+  (println "entering delaunay")
   (delaunay' (sort-xy (vec (distinct sites)))))
