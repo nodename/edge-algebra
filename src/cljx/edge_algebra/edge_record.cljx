@@ -44,7 +44,7 @@
                             (let [next {:r (rnext r) :f f :edge-record index}]
                               (new-edge! r f index next))))))]
 
-    (let [er {:edges edges :nodes nodes}]
+    (let [er {:edges edges :nodes nodes :index index}]
       (add-edge-record! er)
       er)))
 

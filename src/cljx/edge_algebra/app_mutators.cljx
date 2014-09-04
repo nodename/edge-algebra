@@ -1,16 +1,11 @@
 (ns edge-algebra.app-mutators
-  (:require [edge-algebra.app-state :refer [app-state initial-state]]
+  (:require [edge-algebra.app-state :refer [app-state initial-state
+                                            #+cljs cursor
+                                            #+cljs set-cursor!]]
             [utils.reporting :refer [get-fn-name]]
+            [edge-algebra.cheat-codes :refer [edge-info show-all-edge-records]]
      #+cljs [om.core :as om :include-macros true]))
 
-
-#+cljs
-(def cursor (atom nil))
-
-#+cljs
-(defn set-cursor!
-  [c]
-  (reset! cursor c))
 
 
 ;; Mutators:
@@ -20,7 +15,7 @@
 (defn add-to-undo!
   "Add a marker transaction to the undo list for the current cursor state."
   []
-  (om/transact! @cursor [] (constantly @app-state) :add-to-undo))
+  (om/transact! @cursor [] identity :add-to-undo))
 
 
 #+cljs
@@ -47,6 +42,7 @@
   [er]
   #+clj (swap! app-state update-in [:edge-records] conj er)
   #+cljs (om/transact! @cursor [:edge-records] #(conj % er)))
+
 
 (defn add-circle!
   [c]
@@ -165,6 +161,7 @@
         r (:r edge)
         f (:f edge)
         path [:edge-records er-index :edges r f :data]]
+
     (update! path data)
     (get-in @app-state (vec (butlast path)))))
 
@@ -180,4 +177,4 @@
         path [:edge-records er-index :edges r f :next]]
         (println )
     (update! path next)
-    (get-in @app-state (vec (butlast path)))))
+     (get-in @app-state (vec (butlast path)))))

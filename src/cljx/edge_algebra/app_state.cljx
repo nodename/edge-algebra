@@ -1,10 +1,22 @@
-(ns edge-algebra.app-state)
+(ns edge-algebra.app-state
+  #+cljs (:require [om.core :as om :include-macros true]))
 
 (def initial-state {:edge-records []
                     :circles []
                     :messages []})
 
 (def app-state (atom initial-state))
+
+
+#+cljs
+(def cursor (atom nil))
+
+#+cljs
+(defn set-cursor!
+  [c]
+  (reset! cursor c))
+
+
 
 (defn next-er-index
   []

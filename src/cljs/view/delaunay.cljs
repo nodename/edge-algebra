@@ -3,15 +3,14 @@
             [om.dom :as dom :include-macros true]
             [cljs.core.async :refer [<! chan]]
             [delaunay.div-conq :as dq :refer [pt delaunay]]
-            [edge-algebra.app-mutators :refer [set-cursor!
-                                                          wrap-with-undo
-                                                          wrap-with-add-circle
-                                                          wrap-with-clear-circles
-                                                          wrap-with-add-message
-                                                          replace-with-add-message
-                                                          wrap-with-name-and-args-reporting
-                                                          wrap-with-clear-messages
-                                                          reset-state!]]))
+            [edge-algebra.app-mutators :refer [wrap-with-undo
+                                               wrap-with-add-circle
+                                               wrap-with-clear-circles
+                                               wrap-with-add-message
+                                               replace-with-add-message
+                                               wrap-with-name-and-args-reporting
+                                               wrap-with-clear-messages
+                                               reset-state!]]))
 
 
 (defn with-decorations
