@@ -5,6 +5,19 @@
             [utils.reporting :refer [get-fn-name]]
      #+cljs [om.core :as om :include-macros true]))
 
+(defn wrap-before
+  [f aux]
+  (fn [& args]
+    (do
+      (aux args)
+      (apply f args))))
+
+(defn wrap-after
+  [f aux]
+  (fn [& args]
+    (let [val (apply f args)]
+      (aux args)
+      val)))
 
 #+cljs
 (defn add-to-undo!
@@ -18,10 +31,7 @@
   "Return a function which will add the current app state to the undo list
   after invoking f."
   [f]
-  (fn [& args]
-    (let [val (apply f args)]
-      (add-to-undo!)
-      val)))
+  (wrap-after f add-to-undo!))
 
 (defn update!
   [path value]
@@ -48,19 +58,6 @@
   [& _]
   (update! [:circles] []))
 
-(defn wrap-before
-  [f aux]
-  (fn [& args]
-    (do
-      (aux args)
-      (apply f args))))
-
-(defn wrap-after
-  [f aux]
-  (fn [& args]
-    (let [val (apply f args)]
-      (aux args)
-      val)))
 
 (defn wrap-with-add-circle
   "Return a function that will add the args of f to :circles
