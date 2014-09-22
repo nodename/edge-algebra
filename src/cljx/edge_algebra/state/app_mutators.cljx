@@ -1,14 +1,9 @@
-(ns edge-algebra.app-mutators
-  (:require [edge-algebra.app-state :refer [app-state initial-state
+(ns edge-algebra.state.app-mutators
+  (:require [edge-algebra.state.app-state :refer [app-state initial-state
                                             #+cljs cursor
                                             #+cljs set-cursor!]]
             [utils.reporting :refer [get-fn-name]]
-            [edge-algebra.cheat-codes :refer [edge-info show-all-edge-records]]
      #+cljs [om.core :as om :include-macros true]))
-
-
-
-;; Mutators:
 
 
 #+cljs
@@ -142,17 +137,10 @@
     (update! path true)))
 
 
-(defn set-sym-data!
-  "Set sym edge's data. Return the calling edge."
-  [edge data]
-  (let [er-index (:edge-record edge)
-        r (:r edge)
-        sym-r (mod (+ 2 (:r edge)) 4)
-        f (:f edge)
-        path [:edge-records er-index :edges sym-r f :data]]
-    (update! path data)
-    (get-in @app-state [:edge-records er-index :edges r f])))
-
+(defn o-next
+  "Get the current o-next of edge."
+  [edge]
+  (get-in @app-state [:edge-records (:edge-record edge) :edges (:r edge) (:f edge) :next]))
 
 (defn set-data!
   "Set edge's data. Return the updated edge."
@@ -163,7 +151,23 @@
         path [:edge-records er-index :edges r f :data]]
 
     (update! path data)
-    (get-in @app-state (vec (butlast path)))))
+    (let [updated-edge (get-in @app-state (vec (butlast path)))]
+      ;(println "set-data! edge:" edge)
+      ;(println "set-data! updated-edge:" updated-edge)
+      updated-edge)))
+
+
+(defn set-sym-data!
+  "Set sym edge's data. Return the calling edge."
+  [edge data]
+  (let [er-index (:edge-record edge)
+        r (:r edge)
+        sym-r (mod (+ 2 (:r edge)) 4)
+        f (:f edge)
+        sym-path [:edge-records er-index :edges sym-r f :data]]
+    (update! sym-path data)
+    edge))
+
 
 (defn set-next!
   "Set edge's next. Return the updated edge."
@@ -175,6 +179,5 @@
         r (:r edge)
         f (:f edge)
         path [:edge-records er-index :edges r f :next]]
-        (println )
     (update! path next)
-     (get-in @app-state (vec (butlast path)))))
+    (get-in @app-state (vec (butlast path)))))

@@ -1,5 +1,5 @@
 (ns edge-algebra.cheat-codes
-(:require [edge-algebra.app-state :refer [app-state]]
+(:require [edge-algebra.state.app-state :refer [app-state]]
           [edge-algebra.edge :refer [o-next sym]]))
 
 

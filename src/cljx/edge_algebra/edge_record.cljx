@@ -1,13 +1,14 @@
 (ns edge-algebra.edge-record
-  (:require [edge-algebra.app-state :refer [next-er-index]]
-            [edge-algebra.app-mutators :refer [add-edge-record!]]
+  (:require [edge-algebra.state.app-state :refer [next-er-index]]
+            [edge-algebra.state.app-mutators :refer [add-edge-record!]]
             [edge-algebra.node :refer [new-node!]]
             [edge-algebra.edge :refer [new-edge!]]))
 
 
 ;; An EdgeRecord represents eight edges:
-;; the four oriented and directed versions of an undirected edge and of its dual;
-;; and the eight nodes that represent the vertices of the edge and of its dual.
+;; the four oriented and directed versions of an undirected edge and of its dual.
+;; The EdgeRecord also represents the eight nodes that are the
+;; vertices of the edge and of its dual.
 ;; The duals of vertices of an edge are faces incident to the edge's dual.
 
 

@@ -1,5 +1,5 @@
 (ns edge-algebra.edge
-  (:require [edge-algebra.app-state :refer [get-edge-record]]
+  (:require [edge-algebra.state.app-state :refer [get-val get-edge-record]]
             [edge-algebra.record :refer [get-node get-edge]]))
 
 
@@ -63,16 +63,6 @@
    ;  (println "SYM: new r f: " r " " f)
      (get-edge (get-edge-record edge) r f))))
 
-(defn orientable-sym
-  "return the symmetric QuadEdge: the one with same orientation and opposite direction"
-  ([edge] (sym 1 edge))
-  ([exponent edge]
-  ; (println "SYM: input r f: " (:r edge) " " (:f edge))
-   (let [r (+ (:r edge) (* 2 exponent))
-         f (:f edge)]
-   ;  (println "SYM: new r f: " r " " f)
-     (get-edge (get-edge-record edge) r f))))
-
 (defn flip
   "return the QuadEdge with same direction and opposite orientation"
   ([edge] (flip 1 edge))
@@ -82,19 +72,24 @@
      (get-edge (get-edge-record edge) r f))))
 
 
-;; get connected edges: oPrev. oNext, dPrev, dNext, lPrev, lNext, rPrev, rNext
+;; get connected edges: oPrev, oNext, dPrev, dNext, lPrev, lNext, rPrev, rNext
 
 ;; First we give the eight primitive operations
 ;; that find the next and prev edges through
 ;; each of the four rings in which this edge participates.
 ;; Note that they all access a single property of
-;; the Edge type, .getNext:
+;; the Edge type, :next.
 
 ;; find the QuadEdge immediately following this one
-;; counterclockwise in the ring of edges out of originVertex:
+;; counterclockwise in the ring of edges out of originVertex.
+;; This is the only topological property that is stored on the edge;
+;; all others are derived.
 (defn ^:private onext [edge]
-  (get-edge (get-edge-record (:next edge))
-            (:r (:next edge)) (:f (:next edge))))
+  ;; Get the current value of edge from app-state
+  ;; so we have the correct :next property:
+  (let [edge (get-val edge)]
+    (get-edge (get-edge-record (:next edge))
+              (:r (:next edge)) (:f (:next edge)))))
 
 ;; find the QuadEdge immediately following this one
 ;; clockwise in the ring of edges out of originVertex:

@@ -16,6 +16,8 @@
   :min-lein-version "2.0.0"
   :source-paths ["src/clj" "target/generated/clj"]
 
+  :main "delaunay.main"
+
   :plugins [[lein-cljsbuild "1.0.3"]
             [lein-simpleton "1.1.0"]
             [com.keminglabs/cljx "0.4.0"]]

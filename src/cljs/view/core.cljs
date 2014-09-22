@@ -2,7 +2,7 @@
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
             [view.delaunay :refer [run-delaunay]]
-            [edge-algebra.app-state :refer [app-state set-cursor!]]
+            [edge-algebra.state.app-state :refer [app-state set-cursor!]]
             [view.edges :refer [render-edges]]
             [view.fading-circle :refer [fading-circle-update]]
             [view.animator :refer [animator]]

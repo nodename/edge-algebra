@@ -1,5 +1,5 @@
 (ns view.time-machine
-	(:require [edge-algebra.app-state :refer [app-state]]
+	(:require [edge-algebra.state.app-state :refer [app-state]]
             [view.clock :refer [clock]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 

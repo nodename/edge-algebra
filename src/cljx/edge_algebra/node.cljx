@@ -1,5 +1,5 @@
 (ns edge-algebra.node
-  (:require [edge-algebra.app-state :refer [get-edge-record]]))
+  (:require [edge-algebra.state.app-state :refer [get-edge-record]]))
 
 ;; A Node represents either a vertex or a face of the graph
 
