@@ -91,13 +91,11 @@
 
 (defn right-of?
   [point edge]
-  (let [result (ccw? point (dest edge) (org edge))]
-    result))
+  (ccw? point (dest edge) (org edge)))
 
 (defn left-of?
   [point edge]
-  (let [result (ccw? point (org edge) (dest edge))]
-    result))
+  (ccw? point (org edge) (dest edge)))
 
 
 (defn sort-xy
@@ -167,10 +165,7 @@
 
 
 (defn delaunay'
-  "Calculate the Delaunay triangulation of the sites; return
-   the counterclockwise convex hull edge out of the leftmost vertex
-   and the clockwise convex hull edge out of the rightmost vertex.
-  Assume the sites are sorted."
+  "Calculate the Delaunay triangulation of the sites; assume the sites are sorted."
   [sites]
   (condp = (count sites)
       2 (let [[s1 s2] sites

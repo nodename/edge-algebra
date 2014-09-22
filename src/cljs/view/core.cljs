@@ -8,6 +8,7 @@
             [view.animator :refer [animator]]
             [view.time-machine :as time-machine :refer [handle-transaction
                                                         do-undo do-redo do-play
+                                                        do-back do-next
                                                         do-rewind do-end]]))
 
 (enable-console-print!)
@@ -63,9 +64,14 @@
               (dom/div #js {:style #js {:position "relative" :top "420px" :left "60px"}}
 
                        (dom/button #js {:width "20%"
-                                        :style (button-style 0 100)
+                                        :style (button-style 0 0)
                                         :onClick (fn [e] (do-rewind))}
-                                   "[Rewind]")
+                                   "[<<<Rewind]")
+
+                       (dom/button #js {:width "20%"
+                                        :style (button-style 0 100)
+                                        :onClick (fn [e] (do-back))}
+                                   "[<<Back]")
 
                        (dom/button #js {:width "20%"
                                         :style (button-style 0 200)
@@ -84,8 +90,13 @@
 
                        (dom/button #js {:width "20%"
                                         :style (button-style 0 500)
+                                        :onClick (fn [e] (do-next))}
+                                   "[Next>>]")
+
+                       (dom/button #js {:width "20%"
+                                        :style (button-style 0 600)
                                         :onClick (fn [e] (do-end))}
-                                   "[End]")
+                                   "[End>>>]")
 
                        (dom/button #js {:width "20%"
                                         :style (button-style 40 300)

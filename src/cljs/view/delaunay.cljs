@@ -42,7 +42,7 @@
 
 (defn run-delaunay
   []
-  (reset-state!)
-  (let [sites (make-sites 800 400 20)]
+  ((wrap-with-undo reset-state!))
+  (let [sites (make-sites 800 400 100)]
     (println sites)
     (with-decorations delaunay sites)))
