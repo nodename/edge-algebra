@@ -10,14 +10,16 @@
    ;; some functions for navigating to related edges:
    [edge-algebra.edge :refer [sym o-next o-prev l-next r-prev]];;
    ;;
-   ;; debugging aid:
-   [edge-algebra.cheat-codes :refer [edge-info]]
-   ;;
    ;; geometry support from toxi's geom library:
    [thi.ng.geom.core :as g]
    [thi.ng.geom.core.vector :refer [vec2]]
    [thi.ng.geom.core.matrix :refer [matrix44]]
-   [thi.ng.geom.core.utils :refer [norm-sign2]]))
+   [thi.ng.geom.core.utils :refer [norm-sign2]]
+   ;;
+   ;; debugging aid:
+   [edge-algebra.cheat-codes :refer [edge-info]]
+   ;;
+   [utils.spawn :refer [go-fn vec-chan]]))
 
 
 ;; An alias for the 2-D point constructor:
@@ -98,6 +100,11 @@
   (ccw? point (org edge) (dest edge)))
 
 
+
+
+
+
+
 (defn sort-xy
   "Sort by x, and when xs are equal, sort by y"
   [seq]
@@ -156,35 +163,75 @@
 
 (defn lower-common-tangent
   [ldi rdi]
-  (loop [ldi ldi
-         rdi rdi]
+  (loop [left ldi
+         right rdi]
     (cond
-     (left-of? (org rdi) ldi)  (recur (l-next ldi) rdi)
-     (right-of? (org ldi) rdi) (recur ldi (r-prev rdi))
-     :else [ldi rdi])))
+     (left-of? (org right) left)  (recur (l-next left) right)
+     (right-of? (org left) right) (recur left (r-prev right))
+     :else [left right])))
+
+
+(defn merge!
+  [initial-cross-edge]
+  (loop [cross-edge initial-cross-edge]
+    (let [l-candidate (bubble-left! cross-edge)
+          r-candidate (bubble-right! cross-edge)
+          ;;
+          dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
+      ;;
+      ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
+      ;; then cross-edge is the upper common tangent and we're done.
+      ;;
+      ;; Otherwise:
+      (when (or (dest-above-cross-edge? l-candidate)
+                (dest-above-cross-edge? r-candidate))
+        ;;
+        ;; The next cross edge is to be connected to either
+        ;; (dest l-candidate) or (dest r-candidate).
+        ;; If both dests are above cross-edge,
+        ;; then choose the appropriate one using the in-circle? test:
+        (if (or (not (dest-above-cross-edge? l-candidate))
+                (and (dest-above-cross-edge? r-candidate)
+                     (in-circle? (dest l-candidate) (org l-candidate) (org r-candidate)
+                                 (dest r-candidate))))
+          ;;
+          ;; Add new cross edge from (dest r-candidate) to (dest cross-edge):
+          (recur (connect! r-candidate (sym cross-edge)))
+          ;;
+          ;; Else add new cross edge from (org cross-edge) to (dest l-candidate):
+          (recur (connect! (sym cross-edge) (sym l-candidate))))))))
+
+
+(defn delaunay-2'
+  [sites]
+  (let [[s1 s2] sites
+        a (make-d-edge! s1 s2)]
+    [a (sym a)]))
+
+
+(defn delaunay-3'
+  [sites]
+  (let [[s1 s2 s3] sites
+        a (make-d-edge! s1 s2)
+        b (make-d-edge! s2 s3)]
+    (splice! (sym a) b)
+    ;; Now close the triangle:
+    (cond
+     (ccw? s1 s2 s3) (do
+                       (connect! b a)
+                       [a (sym b)])
+     (ccw? s1 s3 s2) (let [c (connect! b a)]
+                       [(sym c) c])
+     ;; Otherwise the three points are collinear:
+     :else [a (sym b)])))
 
 
 (defn delaunay'
   "Calculate the Delaunay triangulation of the sites; assume the sites are sorted."
   [sites]
   (condp = (count sites)
-      2 (let [[s1 s2] sites
-              a (make-d-edge! s1 s2)]
-          [a (sym a)])
-
-      3 (let [[s1 s2 s3] sites
-              a (make-d-edge! s1 s2)
-              b (make-d-edge! s2 s3)]
-          (splice! (sym a) b)
-          ;; Now close the triangle:
-          (cond
-           (ccw? s1 s2 s3) (do
-                             (connect! b a)
-                             [a (sym b)])
-           (ccw? s1 s3 s2) (let [c (connect! b a)]
-                             [(sym c) c])
-           ;; Otherwise the three points are collinear:
-           :else [a (sym b)]))
+      2 (delaunay-2' sites)
+      3 (delaunay-3' sites)
       ;;
       ;; The default case, four or more sites: divide and conquer
       ;;
@@ -194,53 +241,33 @@
             _ (println "r:" r)
             [ldo ldi] (delaunay' l)
             [rdi rdo] (delaunay' r)
+
+          ;  a (atom nil)
+          ;  l-chan ((go-fn delaunay') l)
+          ;  r-chan ((go-fn delaunay') r)
+          ;  v (vec-chan l-chan r-chan)
+          ;  _ (take! v #(reset! a %))
+
+
             ;;
-            ;; Compute the lower common tangent [ldi rdi] of l and r:
-            [ldi rdi] (lower-common-tangent ldi rdi)
+            ;; Compute the lower common tangent of l and r:
+            [left-tangent right-tangent] (lower-common-tangent ldi rdi)
             ;;
-            ;; Create initial-cross-edge from (org rdi) to (org ldi)
+            ;; Create initial-cross-edge from (org right-tangent) to (org left-tangent)
             ;; (Note that we always choose the right-to-left direction for a cross-edge):
-            initial-cross-edge (connect! (sym rdi) ldi)
-            ldo (if (= (org ldi) (org ldo))
-                  (sym initial-cross-edge)
-                  ldo)
-            rdo (if (= (org rdi) (org rdo))
-                  initial-cross-edge
-                  rdo)]
-          ;;
-          ;; This is the merge loop:
-          ;;
-          (loop [cross-edge initial-cross-edge]
-            (let [l-candidate (bubble-left! cross-edge)
-                  r-candidate (bubble-right! cross-edge)
-                  ;;
-                  dest-above-cross-edge? (fn [edge] (dest-above? edge cross-edge))]
-              ;;
-              ;; If neither (dest l-candidate) nor (dest r-candidate) is above cross-edge,
-              ;; then cross-edge is the upper common tangent and we're done.
-              ;;
-              ;; Otherwise:
-              (when (or (dest-above-cross-edge? l-candidate)
-                        (dest-above-cross-edge? r-candidate))
-                ;;
-                ;; The next cross edge is to be connected to either
-                ;; (dest l-candidate) or (dest r-candidate).
-                ;; If both dests are above cross-edge,
-                ;; then choose the appropriate one using the in-circle? test:
-                (if (or (not (dest-above-cross-edge? l-candidate))
-                        (and (dest-above-cross-edge? r-candidate)
-                             (in-circle? (dest l-candidate) (org l-candidate) (org r-candidate)
-                                         (dest r-candidate))))
-                  ;;
-                  ;; Add new cross edge from (dest r-candidate) to (dest cross-edge):
-                  (recur (connect! r-candidate (sym cross-edge)))
-                  ;;
-                  ;; Else add new cross edge from (org cross-edge) to (dest l-candidate):
-                  (recur (connect! (sym cross-edge) (sym l-candidate)))))))
+            initial-cross-edge (connect! (sym right-tangent) left-tangent)]
+
+        (merge! initial-cross-edge)
 
         ;; Return two edges: the counterclockwise convex-hull edge out of the leftmost vertex,
         ;; and the clockwise convex-hull edge out of the rightmost vertex.
-        [ldo rdo])))
+        (let [left-edge (if (= (org left-tangent) (org ldo))
+                    (sym initial-cross-edge)
+                    ldo)
+              right-edge (if (= (org right-tangent) (org rdo))
+                    initial-cross-edge
+                    rdo)]
+          [left-edge right-edge]))))
 
 (defn delaunay
   "Run delaunay' on sorted sites with no duplicates.

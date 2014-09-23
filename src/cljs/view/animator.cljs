@@ -1,7 +1,7 @@
 (ns view.animator
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [put! <! chan timeout]]
+            [cljs.core.async :refer [<! chan timeout]]
             [view.clock :refer [clock]]
             [delaunay.utils.circle :refer [center-and-radius]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))

@@ -12,26 +12,29 @@
                      reset-state!]]))
 
 
-(defn with-decorations
-  [f & [args]]
-  (with-redefs [edge-algebra.core/splice! (wrap-with-name-and-args-reporting
-                                           edge-algebra.core/splice!)
-                dq/make-d-edge! (wrap-with-clear-messages
-                                 (wrap-with-clear-circles
-                                  (wrap-with-undo
-                                   (wrap-with-name-and-args-reporting
-                                    dq/make-d-edge!))))
-                dq/delete-edge! (wrap-with-clear-messages
-                                 (wrap-with-clear-circles
-                                  (wrap-with-undo
-                                   (wrap-with-name-and-args-reporting
-                                    dq/delete-edge!))))
-                dq/in-circle? (wrap-with-add-circle
-                               (wrap-with-name-and-args-reporting
-                                dq/in-circle?))
-                println (replace-with-add-message
-                         println)]
-    (f args)))
+(defn decorate
+  [f]
+  (fn [& args]
+    (with-redefs [edge-algebra.core/splice! (wrap-with-name-and-args-reporting
+                                             edge-algebra.core/splice!)
+                  dq/make-d-edge! (wrap-with-clear-messages
+                                   (wrap-with-clear-circles
+                                    (wrap-with-undo
+                                     (wrap-with-name-and-args-reporting
+                                      dq/make-d-edge!))))
+                  dq/delete-edge! (wrap-with-clear-messages
+                                   (wrap-with-clear-circles
+                                    (wrap-with-undo
+                                     (wrap-with-name-and-args-reporting
+                                      dq/delete-edge!))))
+                  dq/in-circle? (wrap-with-add-circle
+                                 (wrap-with-name-and-args-reporting
+                                  dq/in-circle?))
+                  println (replace-with-add-message
+                           println)]
+      (apply f args))))
+
+(def deco-delaunay (decorate delaunay))
 
 
 (defn make-sites
@@ -43,6 +46,6 @@
 (defn run-delaunay
   []
   ((wrap-with-undo reset-state!))
-  (let [sites (make-sites 800 400 100)]
+  (let [sites (make-sites 800 400 40)]
     (println sites)
-    (with-decorations delaunay sites)))
+    (deco-delaunay sites)))
