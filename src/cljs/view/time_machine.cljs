@@ -1,6 +1,6 @@
 (ns view.time-machine
 	(:require [edge-algebra.state.app-state :refer [app-state initial-state]]
-            [view.clock :refer [clock]])
+            [cljs.core.async :refer [<!]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 ;; Mostly copied from goya.
@@ -36,6 +36,12 @@
 
 (defn redo-is-possible []
   (> (count @app-future) 0))
+
+
+(defn next-state
+  []
+  (when (redo-is-possible)
+    (last @app-future)))
 
 
 (defn push-onto-undo-stack [new-state]
@@ -83,14 +89,28 @@
 (defn do-end []
   (while (do-redo)))
 
-(defn do-play []
-  "Play to the end of the current run."
-  (do-redo)
-  (let [[clock] (clock 500)]
-    (go (while (and (not= (last @app-future) initial-state)
-                    (do
-                      (<! clock)
-                      (do-redo)))))))
+
+(defn init-play
+  "Start a process that will play to the next end of a run
+  as long as clock ticks are received."
+  [clock notify-done]
+  (go
+   (loop [status :starting]
+     (<! clock)
+     (when (and (= status :starting)
+                (= (next-state) initial-state))
+       (do-redo))
+     (if (and (redo-is-possible)
+              (not= (next-state) initial-state))
+       (do
+         (<! clock)
+         (do-redo)
+         (recur :continuing))
+       (do
+         (notify-done)
+         (<! clock)
+         (recur :starting))))))
+
 
 
 (defn handle-transaction [tx-data root-cursor]
