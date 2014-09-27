@@ -9,7 +9,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/clojurescript "0.0-2280"]
-                 [org.clojure/core.async "0.1.319.0-6b1aca-alpha"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [om "0.7.1"]
                 ; we're keeping a local copy of this: [thi.ng/geom "0.3.0-SNAPSHOT"]
                  ]
