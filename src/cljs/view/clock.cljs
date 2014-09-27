@@ -4,12 +4,14 @@
 
 (defn clock
   "Create a channel which emits the current time every interval milliseconds.
-  Any value written to start/stop will start/stop the messages."
-  [interval]
+  Any value written to start/stop will start/stop the messages.
+  The :run-at-start named argument (default true) specifies whether or not
+  the clock will start running immediately without waiting for the first start message."
+  [interval & {:keys [run-at-start] :or {run-at-start true}}]
   (let [start (chan)
         stop (chan)
         out (chan)]
-    (go-loop [running? true]
+    (go-loop [running? run-at-start]
              (let [t (timeout interval)
                    [_ ch] (alts! [stop t start])]
                (when running?
