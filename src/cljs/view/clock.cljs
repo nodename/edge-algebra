@@ -7,7 +7,8 @@
   Any value written to start/stop will start/stop the messages.
   The :run-at-start named argument (default true) specifies whether or not
   the clock will start running immediately without waiting for the first start message."
-  [interval & {:keys [run-at-start] :or {run-at-start true}}]
+  [interval & {:keys [run-at-start]
+               :or {run-at-start true}}]
   (let [start (chan)
         stop (chan)
         out (chan)]

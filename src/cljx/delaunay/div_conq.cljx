@@ -19,7 +19,14 @@
    ;; debugging aid:
    [edge-algebra.cheat-codes :refer [edge-info]]
    ;;
-   [utils.spawn :refer [go-fn vec-chan]]))
+  ; [utils.spawn :refer [go-fn]]
+
+   #+clj [clojure.core.async
+          :refer [>! take! chan go go-loop alts!]]
+   #+cljs [cljs.core.async
+                    :refer [>! take! chan alts!]])
+  #+cljs (:require-macros [cljs.core.async.macros
+                           :refer [go]]))
 
 
 ;; An alias for the 2-D point constructor:
@@ -171,7 +178,7 @@
      :else [left right])))
 
 
-(defn merge!
+(defn bubble-up!
   [initial-cross-edge]
   (loop [cross-edge initial-cross-edge]
     (let [l-candidate (bubble-left! cross-edge)
@@ -202,10 +209,34 @@
           (recur (connect! (sym cross-edge) (sym l-candidate))))))))
 
 
+(defn merge!
+  [ldo ldi rdi rdo]
+  ;;
+  ;; Compute the lower common tangent of l and r:
+  (let [[left-tangent right-tangent] (lower-common-tangent ldi rdi)
+        ;;
+        ;; Create initial-cross-edge from (org right-tangent) to (org left-tangent)
+        ;; (Note that we always choose the right-to-left direction for a cross-edge):
+        initial-cross-edge (connect! (sym right-tangent) left-tangent)]
+
+    (bubble-up! initial-cross-edge)
+
+    ;; Return two edges: the counterclockwise convex-hull edge out of the leftmost vertex,
+    ;; and the clockwise convex-hull edge out of the rightmost vertex.
+    (let [left-edge (if (= (org left-tangent) (org ldo))
+                      (sym initial-cross-edge)
+                      ldo)
+          right-edge (if (= (org right-tangent) (org rdo))
+                       initial-cross-edge
+                       rdo)]
+      [left-edge right-edge])))
+
+
 (defn delaunay-2'
   [sites]
   (let [[s1 s2] sites
         a (make-d-edge! s1 s2)]
+    (println "2 returning" [(edge-info a) (edge-info (sym a))])
     [a (sym a)]))
 
 
@@ -229,45 +260,31 @@
 (defn delaunay'
   "Calculate the Delaunay triangulation of the sites; assume the sites are sorted."
   [sites]
+  (println "delaunay' sites:" sites)
   (condp = (count sites)
       2 (delaunay-2' sites)
       3 (delaunay-3' sites)
       ;;
       ;; The default case, four or more sites: divide and conquer
-      ;;
-      (let [[l r] (halves sites)
-            _ (println)
-            _ (println "l:" l)
-            _ (println "r:" r)
-            [ldo ldi] (delaunay' l)
-            [rdi rdo] (delaunay' r)
+      (let [; godel (go-fn delaunay')
+            [l r] (halves sites)]
+        (println)
+        (println "r:" r)
+        (println "l:" l)
+        (println)
+        #_(let [l-chan (godel l)
+              r-chan (godel r)]
+           (go
+            (let [[ldo ldi] (<! l-chan)
+                  [rdi rdo] (<! r-chan)]
+              (merge! ldo ldi rdi rdo))))
 
-          ;  a (atom nil)
-          ;  l-chan ((go-fn delaunay') l)
-          ;  r-chan ((go-fn delaunay') r)
-          ;  v (vec-chan l-chan r-chan)
-          ;  _ (take! v #(reset! a %))
+              (let [[ldo ldi] (delaunay' l)
+                    [rdi rdo] (delaunay' r)]
+                (merge! ldo ldi rdi rdo))
 
+        )))
 
-            ;;
-            ;; Compute the lower common tangent of l and r:
-            [left-tangent right-tangent] (lower-common-tangent ldi rdi)
-            ;;
-            ;; Create initial-cross-edge from (org right-tangent) to (org left-tangent)
-            ;; (Note that we always choose the right-to-left direction for a cross-edge):
-            initial-cross-edge (connect! (sym right-tangent) left-tangent)]
-
-        (merge! initial-cross-edge)
-
-        ;; Return two edges: the counterclockwise convex-hull edge out of the leftmost vertex,
-        ;; and the clockwise convex-hull edge out of the rightmost vertex.
-        (let [left-edge (if (= (org left-tangent) (org ldo))
-                    (sym initial-cross-edge)
-                    ldo)
-              right-edge (if (= (org right-tangent) (org rdo))
-                    initial-cross-edge
-                    rdo)]
-          [left-edge right-edge]))))
 
 (defn delaunay
   "Run delaunay' on sorted sites with no duplicates.

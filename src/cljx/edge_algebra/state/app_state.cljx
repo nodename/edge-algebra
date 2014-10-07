@@ -1,6 +1,11 @@
 (ns edge-algebra.state.app-state)
 
+
+;; TODO This mixes actual app state :edge-records
+;; with transients. Separate them.
+
 (def initial-state {:edge-records []
+                    :current-edge-record nil
                     :circles []
                     :messages []})
 

@@ -97,20 +97,26 @@
   (go
    (loop [status :starting]
      (<! clock)
+     ;; When starting up at the end of a run,
+     ;; step forward:
      (when (and (= status :starting)
                 (= (next-state) initial-state))
        (do-redo))
      (if (and (redo-is-possible)
               (not= (next-state) initial-state))
+       ;; I have a next state to continue to;
+       ;; keep going:
        (do
          (<! clock)
          (do-redo)
          (recur :continuing))
+       ;; otherwise, request the clock to stop,
+       ;; swallow a final clock tick (not sure why),
+       ;; and return to start:
        (do
          (notify-done)
          (<! clock)
          (recur :starting))))))
-
 
 
 (defn handle-transaction [tx-data root-cursor]

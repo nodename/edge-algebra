@@ -1,5 +1,6 @@
 (ns edge-algebra.state.app-mutators
   (:require [edge-algebra.state.app-state :refer [app-state initial-state
+                                                  get-edge-record
                                             #+cljs cursor
                                             #+cljs set-cursor!]]
             [utils.reporting :refer [get-fn-name]]
@@ -31,7 +32,10 @@
   "Return a function which will add the current app state to the undo list
   after invoking f."
   [f]
-  (wrap-after f add-to-undo!))
+  ;; when using async, can't just do this:
+   (wrap-after f add-to-undo!))
+  ;; must be all in a transaction:
+  ;; we have to inject :add-to-undo into f's om/transact! call.
 
 (defn update!
   [path value]
@@ -42,9 +46,32 @@
   []
   (update! [] initial-state))
 
+(defn set-adding-edge-record
+  "Set the :adding-edge-record field of app-state"
+  [er]
+  (let [val (if (nil? er) nil {:type :adding
+                               :er-index (:index er)})]
+    #+clj (swap! app-state assoc-in [:current-edge-record] val)
+    #+cljs (om/update! @cursor [:current-edge-record] val)))
+
+
+(defn set-removing-edge-record
+  "Set the :removing-edge-record field of app-state"
+  [er]
+  (let [val (if (nil? er) nil {:type :removing
+                               :er-index (:index er)})]
+    #+clj (swap! app-state assoc-in [:current-edge-record] val)
+    #+cljs (om/update! @cursor [:current-edge-record] val)))
+
+
+(defn clear-current-edge-record!
+  []
+  (set-adding-edge-record nil))
+
 
 (defn add-edge-record!
   [er]
+  (set-adding-edge-record er)
   #+clj (swap! app-state update-in [:edge-records] conj er)
   #+cljs (om/transact! @cursor [:edge-records] #(conj % er)))
 
@@ -131,13 +158,15 @@
   [edge]
   (let [er-index (:edge-record edge)
         path [:edge-records er-index :deleted]]
-    (update! path true)))
+    (update! path true))
+  (set-removing-edge-record (get-edge-record edge)))
 
 
 (defn o-next
   "Get the current o-next of edge."
   [edge]
   (get-in @app-state [:edge-records (:edge-record edge) :edges (:r edge) (:f edge) :next]))
+
 
 (defn set-data!
   "Set edge's data. Return the updated edge."

@@ -1,4 +1,5 @@
-(ns view.fading-circle)
+(ns view.animation.fading-circle
+  (:require [view.animation.utils :refer [progress lerp]]))
 
 (defn draw-circle
   [context center radius line-width scale {:keys [r g b a]
@@ -14,16 +15,12 @@
     (.arc context center-x center-y radius 0 (* 2 Math/PI) false)
     (.stroke context)))
 
-(defn alpha
-  [elapsed-time {:keys [delay duration]}]
-  #_(println "alpha: delay:" delay "duration:" duration "elapsed-time:" elapsed-time)
-  (+ 1 (/ (- delay elapsed-time) duration)))
 
 (defn fading-circle-update
   "Draw the circle and the dot, fading"
   [elapsed-time canvas {:keys [center radius dot line-width scale color delay] :as opts}]
   (let [context (.getContext canvas "2d")
-        a (alpha elapsed-time opts)]
+        a (lerp 1 0 (progress elapsed-time opts))]
     (when (>= elapsed-time delay)
       (.clearRect context 0 0 (.-width canvas) (.-height canvas))
       (draw-circle context center radius line-width scale
