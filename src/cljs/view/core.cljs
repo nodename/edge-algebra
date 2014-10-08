@@ -4,26 +4,12 @@
             [cljs.core.async :refer [put! chan <! alts!]]
             [view.delaunay :refer [run-delaunay]]
             [edge-algebra.state.app-state :refer [app-state set-cursor!]]
-            [view.edges :refer [render-edges]]
             [view.animator :refer [animator]]
+            [view.edges :refer [edges-view]]
             [view.controls :refer [controls-view]]
             [view.time-machine :as time-machine :refer [handle-transaction]]))
 
 (enable-console-print!)
-
-
-(defn display-edges
-  [canvas cursor]
-  (render-edges canvas (:edge-records (om/value cursor))
-                :except (:er-index (:current-edge-record (om/value cursor)))))
-
-
-(defn print-messages
-  [cursor]
-  (println "-----------MESSAGES----------")
-  (doseq [msg (:messages (om/value cursor))]
-    (apply println msg))
-  (println "-----------------------------"))
 
 
 (defn delaunay-view
@@ -42,25 +28,15 @@
      (dom/div #js {:width "800px" :height "500px"
                    :style #js {:width "800px" :height "500px"}}
 
-
-              (dom/canvas #js {:id "edges-canvas" :ref "edges-canvas"
-                               :style #js {:position "absolute" :left "0px" :top "0px"
-                                           :width "800px" :height "400px"
-                                           :z-index 1}
-                               :width "800px" :height "400px"})
+              (om/build edges-view
+                        cursor)
 
               (om/build controls-view
                         nil)
 
               (om/build animator
                         cursor
-                        {:state {:start-time (.now (.-performance js/window))}})))
-
-    om/IDidUpdate
-    (did-update
-     [_ _ _]
-     (display-edges (om/get-node owner "edges-canvas") cursor)
-     (print-messages cursor))))
+                        {:state {:start-time (.now (.-performance js/window))}})))))
 
 
 (om/root

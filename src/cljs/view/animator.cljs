@@ -1,7 +1,7 @@
 (ns view.animator
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [cljs.core.async :refer [<! chan timeout close!]]
+            [cljs.core.async :refer [<! chan timeout >!]]
             [view.clock :refer [clock]]
             [edge-algebra.record :refer [get-e0 get-edge]]
             [edge-algebra.state.app-mutators :refer [clear-current-edge-record!]]
@@ -86,7 +86,7 @@
     (init-state
      [this]
      {:clear-current-ch (chan)
-      :clock (clock 5)})
+      :clock (clock 10)})
    ;; :start-time must be injected
 
     om/IWillMount
@@ -104,7 +104,8 @@
        (go
         (loop []
           (<! clear-current-ch)
-          (clear-current-edge-record!)
+          ;; this will update cursor state and cause another render! not good!
+          #_(clear-current-edge-record!)
           (recur)))))
 
     om/IRenderState
@@ -112,6 +113,7 @@
      [_ {:keys [elapsed-time clear-current-ch] :as state}]
      (let [circle-animations (animate-circles (om/value (:circles cursor)))
            op-type (om/value (:type (:current-edge-record cursor)))
+           _ (println "RS:" (count circle-animations) op-type)
            line-animation (animate-line
                            (om/value (:edge-records cursor))
                            (om/value (:current-edge-record cursor))
@@ -131,7 +133,6 @@
          (let [timeout-ch (timeout (make-delay (count animations)))]
            (go
             (<! timeout-ch)
-            (close! timeout-ch)
             (>! clear-current-ch :clear))))
 
        (apply dom/div #js {}

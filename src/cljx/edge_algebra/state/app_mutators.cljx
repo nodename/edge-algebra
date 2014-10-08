@@ -1,9 +1,11 @@
 (ns edge-algebra.state.app-mutators
-  (:require [edge-algebra.state.app-state :refer [app-state initial-state
-                                                  get-edge-record
-                                            #+cljs cursor
-                                            #+cljs set-cursor!]]
-            [utils.reporting :refer [get-fn-name]]
+  (:require [edge-algebra.state.app-state
+             :refer [app-state initial-state
+                     get-edge-record
+                     #+cljs cursor
+                     #+cljs set-cursor!]]
+            [utils.reporting
+             :refer [get-fn-name]]
      #+cljs [om.core :as om :include-macros true]))
 
 (defn wrap-before
