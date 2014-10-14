@@ -8,9 +8,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2280"]
+                 [org.clojure/clojurescript "0.0-2322"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
-                 [om "0.7.1"]
+                 [om "0.7.3"]
                 ; we're keeping a local copy of this: [thi.ng/geom "0.3.0-SNAPSHOT"]
                  ]
   :min-lein-version "2.0.0"
