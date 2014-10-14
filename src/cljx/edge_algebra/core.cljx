@@ -28,8 +28,7 @@
   (get-e0 (new-edge-record!)))
 
 
-;; <img src="splice-1.jpg" />
-;; <img src="splice-2.jpg" />
+;; <img src="splice.png" />
 
 (defn splice!
   "splice! is its own inverse!"
