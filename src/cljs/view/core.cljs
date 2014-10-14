@@ -15,6 +15,11 @@
 (defn delaunay-view
   [cursor owner opts]
   (reify
+    om/IInitState
+    (init-state
+     [_]
+     {:animation-done-ch (chan)})
+
     om/IWillMount
     (will-mount
      [_]
@@ -32,11 +37,13 @@
                         cursor)
 
               (om/build controls-view
-                        nil)
+                        nil
+                        {:opts {:animation-done-ch (om/get-state owner :animation-done-ch)}})
 
               (om/build animator
                         cursor
-                        {:state {:start-time (.now (.-performance js/window))}})))))
+                        {:opts {:animation-done-ch (om/get-state owner :animation-done-ch)}
+                         :state {:start-time (.now (.-performance js/window))}})))))
 
 
 (om/root
