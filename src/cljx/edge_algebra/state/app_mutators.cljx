@@ -139,10 +139,8 @@
   before invoking f."
   [f]
   (fn [& args]
-    (do
-      (add-circle! args)
-
-      (apply f args))))
+    (add-circle! args)
+    (apply f args)))
 
 
 (defn wrap-with-clear-messages
@@ -158,10 +156,10 @@
   "Mark edge's edge record as deleted. We don't really delete it
   because edge records are referred to by their indices in :edge-records."
   [edge]
+  (set-removing-edge-record (get-edge-record edge))
   (let [er-index (:edge-record edge)
         path [:edge-records er-index :deleted]]
-    (update! path true))
-  (set-removing-edge-record (get-edge-record edge)))
+    (update! path true)))
 
 
 (defn o-next
