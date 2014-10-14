@@ -26,4 +26,4 @@
       (draw-circle context center radius line-width scale
                    (merge color {:a a}))
       (draw-circle context dot 5 line-width scale
-                   (merge color {:a a})))))
+                   {:r 255 :g 255 :b 255 :a a}))))

@@ -15,13 +15,13 @@
 
 
 (defn growing-line-update
-  "Draw the line, growing, and when done, stop showing it"
+  "Draw the line, growing"
   [elapsed-time canvas {:keys [start end line-width scale color duration delay] :as opts}]
   (let [context (.getContext canvas "2d")
         progress (progress elapsed-time opts)
         current-end (cond
                      (<= elapsed-time delay) start
-                     (> elapsed-time (+ delay duration)) start
+                     (> elapsed-time (+ delay duration)) end
                      (> elapsed-time delay) (vec2 (lerp (.-x start) (.-x end) progress)
                                                   (lerp (.-y start) (.-y end) progress)))]
     (.clearRect context 0 0 (.-width canvas) (.-height canvas))
@@ -33,7 +33,7 @@
   (let [context (.getContext canvas "2d")
         progress (progress elapsed-time opts)
         current-end (cond
-                     (<= elapsed-time delay) end
+                     (<= elapsed-time delay) start
                      (> elapsed-time (+ delay duration)) start
                      (> elapsed-time delay) (vec2 (lerp (.-x start) (.-x end) (- 1 progress))
                                                   (lerp (.-y start) (.-y end) (- 1 progress))))]

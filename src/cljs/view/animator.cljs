@@ -45,6 +45,9 @@
     (let [update (condp = type
                    :adding growing-line-update
                    :removing shrinking-line-update)
+          color (condp = type
+                  :adding (nth palette 2)
+                  :removing (nth palette 4))
           edge-record (edge-records er-index)
           p0 (:data (get-e0 edge-record))
           p1 (:data (get-edge edge-record 2 0))]
@@ -53,7 +56,7 @@
          :end p1
          :line-width 2
          :scale 1
-         :color {:r 255 #_71 :g 0 #_189 :b 254}
+         :color color
          :update update
          :duration 500
          :delay (make-delay anim-index)}))))
@@ -80,37 +83,29 @@
 
 
 (defn animator
-  [cursor owner]
+  [cursor owner opts]
   (reify
     om/IInitState
     (init-state
      [this]
-     {:clear-current-ch (chan)
-      :clock (clock 10)})
+     {:clock (clock 10)})
    ;; :start-time must be injected
 
     om/IWillMount
     (will-mount
      [_]
-     (println "will-mount")
-     (let [[clock] (om/get-state owner :clock)
-           clear-current-ch (om/get-state owner :clear-current-ch)]
+     (println "animator will-mount")
+     (let [[clock] (om/get-state owner :clock)]
        (go
         (loop []
-                (let [now (<! clock)
-                      elapsed-time (- now (om/get-state owner :start-time))]
-                  (om/set-state! owner :elapsed-time elapsed-time))
-                (recur)))
-       (go
-        (loop []
-          (<! clear-current-ch)
-          ;; this will update cursor state and cause another render! not good!
-          #_(clear-current-edge-record!)
+          (let [now (<! clock)
+                elapsed-time (- now (om/get-state owner :start-time))]
+            (om/set-state! owner :elapsed-time elapsed-time))
           (recur)))))
 
     om/IRenderState
     (render-state
-     [_ {:keys [elapsed-time clear-current-ch] :as state}]
+     [_ {:keys [elapsed-time animation-done-ch] :as state}]
      (let [circle-animations (animate-circles (om/value (:circles cursor)))
            op-type (om/value (:type (:current-edge-record cursor)))
            _ (println "RS:" (count circle-animations) op-type)
@@ -129,11 +124,12 @@
            (when canvas ;; who knows exactly when it mounts
              (update elapsed-time canvas animation))))
 
-       (when (= op-type :adding)
-         (let [timeout-ch (timeout (make-delay (count animations)))]
-           (go
-            (<! timeout-ch)
-            (>! clear-current-ch :clear))))
+       (println "total animations:" (count animations))
+
+       #_(go
+        (let [timeout-ch (timeout (make-delay (count animations)))]
+          (<! timeout-ch)
+          (>! (:animation-done-ch opts) :done)))
 
        (apply dom/div #js {}
               (map (fn [index] (dom/canvas (canvas-props index)))
