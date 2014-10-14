@@ -3,7 +3,8 @@
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
 (defn clock
-  "Create a channel which emits the current time every interval milliseconds.
+  "Return a channel 'out' which emits the current time every interval milliseconds,
+  and two control channels 'start' and 'stop'.
   Any value written to start/stop will start/stop the messages.
   The :run-at-start named argument (default true) specifies whether or not
   the clock will start running immediately without waiting for the first start message."
@@ -13,11 +14,12 @@
         stop (chan)
         out (chan)]
     (go-loop [running? run-at-start]
-             (let [t (timeout interval)
-                   [_ ch] (alts! [stop t start])]
-               (when running?
+             (when running?
                   (let [now (.now (.-performance js/window))]
                     (>! out now)))
+
+             (let [t (timeout interval)
+                   [_ ch] (alts! [stop t start])]
                (condp = ch
                  stop (recur false)
                  t (recur running?)
